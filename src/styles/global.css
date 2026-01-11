@@ -1,0 +1,685 @@
+/* 全局样式重置 - 与原项目保持一致 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 基础样式 - 深色主题 - 与原项目保持一致 */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000;
+}
+
+/* 全局点击缩放效果 - 与原项目保持一致 */
+button:active,
+.a:active,
+[onclick]:active,
+[role="button"]:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+  cursor: pointer;
+}
+
+/* 确保链接和导航项可点击 - 与原项目保持一致 */
+a {
+  cursor: pointer;
+  user-select: none;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* 页面容器 - 移动端优先 */
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+}
+
+/* 移动端样式 */
+@media (max-width: 767px) {
+  /* 移动端保持居中布局 */
+  .header,
+  .main-content,
+  .footer {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* 平板和桌面端样式 - 自适应，不嵌套 */
+@media (min-width: 768px) {
+  /* 平板和桌面端使用全宽布局 */
+  .header,
+  .main-content,
+  .footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+  
+  /* 主内容区域增加内边距 */
+  .main-content {
+    padding: var(--spacing-lg);
+  }
+  
+  /* 页面内容卡片化布局 */
+  .private-sale-section,
+  .profile-section {
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+  }
+}
+
+/* 大屏幕桌面端样式 */
+@media (min-width: 1200px) {
+  .main-content {
+    padding: var(--spacing-xl);
+  }
+  
+  /* 大屏幕上卡片居中显示 */
+  .private-sale-section,
+  .profile-section {
+    max-width: 800px;
+  }
+}
+
+.page-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+}
+
+.page-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  width: 100%;
+}
+
+/* 头部样式 - 移动端优化 */
+.header {
+  background-color: var(--bg-color);
+  padding: var(--spacing-sm) var(--spacing-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.app-title {
+  font-size: var(--font-size-large);
+  color: var(--primary-color);
+  font-weight: bold;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logo h1 {
+  font-size: var(--font-size-large);
+  color: var(--primary-color);
+  font-weight: bold;
+  margin: 0;
+}
+
+/* 底部样式 - 移动端优化 */
+.footer {
+  background-color: var(--bg-color);
+  padding: var(--spacing-xs) var(--spacing-md);
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+}
+
+.footer-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light);
+  text-decoration: none;
+  transition: var(--transition);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-small);
+}
+
+.nav-item.active {
+  color: var(--primary-color);
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+}
+
+.footer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light);
+  text-decoration: none;
+  transition: var(--transition);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+}
+
+.footer-item.active {
+  color: var(--primary-color);
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.footer-icon {
+  font-size: var(--font-size-large);
+  margin-bottom: var(--spacing-xs);
+}
+
+.footer-label {
+  font-size: var(--font-size-small);
+}
+
+/* 按钮样式 - 移动端优化 */
+button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+button:disabled {
+  background-color: var(--border-color);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button.secondary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+button.danger {
+  background-color: var(--error-color);
+  color: white;
+}
+
+button.outline {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+/* 表单样式 - 移动端优化 */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+}
+
+.form-group input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-medium);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* 私募页面样式 - 移动端优化 */
+.private-sale-section {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+}
+
+.private-sale-section h2 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-color);
+  text-align: center;
+  font-size: var(--font-size-large);
+}
+
+.purchase-info {
+  background-color: rgba(24, 144, 255, 0.05);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid rgba(24, 144, 255, 0.2);
+}
+
+.purchase-info p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-size: var(--font-size-small);
+}
+
+.purchase-form {
+  width: 100%;
+}
+
+.estimated-info {
+  background-color: rgba(82, 196, 26, 0.05);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--success-color);
+}
+
+.estimated-info p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--success-color);
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.purchase-btn {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-medium);
+  font-weight: bold;
+  min-height: 40px;
+}
+
+/* 个人中心页面样式 - 移动端优化 */
+.profile-section {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+}
+
+.profile-section h2 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-color);
+  text-align: center;
+  font-size: var(--font-size-large);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.change-avatar-btn {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
+}
+
+.user-info {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.user-info p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-size: var(--font-size-small);
+}
+
+.badge-info {
+  width: 100%;
+  margin-bottom: var(--spacing-lg);
+}
+
+.badge-info h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-medium);
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  background-color: rgba(24, 144, 255, 0.05);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--primary-color);
+}
+
+.badge-icon {
+  font-size: 32px;
+  margin-right: var(--spacing-md);
+}
+
+.badge-details p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-size: var(--font-size-small);
+}
+
+.points-info {
+  width: 100%;
+}
+
+.points-info h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-medium);
+}
+
+.points-info p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.referral-info {
+  width: 100%;
+}
+
+.referral-info h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-medium);
+}
+
+.referral-link {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--spacing-lg);
+}
+
+.referral-link p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.referral-link input {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+
+.referral-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.referral-qr p {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.qr-code {
+  width: 120px;
+  height: 120px;
+  background-color: var(--card-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 64px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.direct-referrals {
+  margin-bottom: var(--spacing-lg);
+}
+
+.direct-referrals h4 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+}
+
+.direct-referrals p {
+  color: var(--text-light);
+  text-align: center;
+  padding: var(--spacing-lg);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-small);
+}
+
+.total-rewards {
+  margin-bottom: var(--spacing-lg);
+}
+
+.total-rewards h4 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+}
+
+.total-rewards p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.view-all-referrals-btn {
+  width: 100%;
+}
+
+/* 自定义 RainbowKit ConnectButton 样式 - 移动端优化 */
+#root .rk-ConnectButton {
+  font-size: 10px !important;
+  padding: 3px 6px !important;
+  min-width: 60px !important;
+  height: 20px !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  line-height: 14px !important;
+  box-sizing: border-box !important;
+}
+
+/* 连接钱包按钮的状态样式 */
+#root .rk-ConnectButton--connected {
+  font-size: 10px !important;
+  padding: 3px 6px !important;
+  min-width: 60px !important;
+  height: 20px !important;
+  box-sizing: border-box !important;
+}
+
+/* 按钮内部文本样式 */
+#root .rk-ConnectButton-label {
+  font-size: 10px !important;
+  line-height: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 按钮内部地址样式 */
+#root .rk-ConnectButton-address {
+  font-size: 9px !important;
+  line-height: 12px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 按钮容器样式 */
+#root .rk-ConnectButton-container {
+  height: 20px !important;
+  min-width: 60px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 连接按钮根元素样式 */
+#root button.rk-ConnectButton {
+  height: 20px !important;
+  min-width: 60px !important;
+  font-size: 10px !important;
+  padding: 3px 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ant Design Modal 深色主题样式 */
+#root .ant-modal {
+  background-color: transparent !important;
+}
+
+#root .ant-modal-content {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+}
+
+#root .ant-modal-header {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+#root .ant-modal-title {
+  color: white !important;
+  font-size: 16px !important;
+}
+
+#root .ant-modal-close {
+  color: white !important;
+}
+
+#root .ant-modal-close:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 响应式设计 - 移动端优先 */
+@media (min-width: 768px) {
+  /* 平板和桌面端样式 */
+  .page-container {
+    max-width: 768px;
+  }
+  
+  .page-content {
+    padding: var(--spacing-lg);
+  }
+  
+  .logo h1 {
+    font-size: var(--font-size-xlarge);
+  }
+}
+
+@media (min-width: 1200px) {
+  /* 桌面端样式 */
+  .page-container {
+    max-width: 1200px;
+  }
+}

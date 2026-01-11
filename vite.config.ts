@@ -7,5 +7,6 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true
-  }
+  },
+  envPrefix: 'REACT_APP_' // 支持REACT_APP_前缀的环境变量
 })
