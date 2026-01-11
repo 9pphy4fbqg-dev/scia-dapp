@@ -56,7 +56,7 @@ const ProfilePage: React.FC = () => {
     if (!isConnected || !userAddress) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userAddress}`);
+      const response = await fetch(`/api/users/${userAddress}`);
       if (response.ok) {
         const userData = await response.json();
         if (userData.data && userData.data.totalRewards) {
@@ -84,7 +84,7 @@ const ProfilePage: React.FC = () => {
     
     setIsLoadingRewardDetails(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userAddress}/reward-details?page=${page}&limit=${limit}`);
+      const response = await fetch(`/api/users/${userAddress}/reward-details?page=${page}&limit=${limit}`);
       if (response.ok) {
         const data = await response.json();
         if (data.data) {
@@ -121,7 +121,7 @@ const ProfilePage: React.FC = () => {
       for (const log of logs) {
         if (log.args.referrer === userAddress) {
           // 调用后端API更新奖励
-          fetch(`http://localhost:3001/api/users/${log.args.referrer}/rewards`, {
+          fetch(`/api/users/${log.args.referrer}/rewards`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'
@@ -171,7 +171,7 @@ const ProfilePage: React.FC = () => {
 
       setIsReferrerLoading(true);
       try {
-        const response = await fetch(`http://localhost:3001/api/users/${referrerAddress}`);
+        const response = await fetch(`/api/users/${referrerAddress}`);
         if (response.ok) {
           const data = await response.json();
           setReferrerInfo(data);
@@ -221,7 +221,7 @@ const ProfilePage: React.FC = () => {
           if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000') {
             // 获取推荐人的用户名
             try {
-              const response = await fetch(`http://localhost:3001/api/users/${referralAddress}`);
+              const response = await fetch(`/api/users/${referralAddress}`);
               if (response.ok) {
                 const data = await response.json();
                 referrals.push({ 
@@ -266,7 +266,7 @@ const ProfilePage: React.FC = () => {
     // 获取地址对应的用户名
     let username = '';
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${address}`);
+      const response = await fetch(`/api/users/${address}`);
       if (response.ok) {
         const data = await response.json();
         username = data.username || '未设置用户名';
@@ -519,7 +519,7 @@ const ProfilePage: React.FC = () => {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
       
-      const response = await fetch(`http://localhost:3001/api/users/${userAddress}`, {
+      const response = await fetch(`/api/users/${userAddress}`, {
         method: 'PUT',
         body: formData,
       });

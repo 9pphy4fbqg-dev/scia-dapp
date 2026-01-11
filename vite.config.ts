@@ -6,7 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      }
+    }
   },
   envPrefix: 'REACT_APP_' // 支持REACT_APP_前缀的环境变量
 })

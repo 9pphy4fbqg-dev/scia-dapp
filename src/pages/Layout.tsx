@@ -41,7 +41,7 @@ const Layout: React.FC = () => {
       // 直接调用API获取用户信息，检查是否已注册
       const checkUserRegistration = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/api/users/${address}`);
+          const response = await fetch(`/api/users/${address}`);
           const userData = await response.json();
           
           if (userData.username) {
