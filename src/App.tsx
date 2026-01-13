@@ -4,15 +4,16 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import PrivateSalePage from './pages/PrivateSale';
 import ProfilePage from './pages/Profile';
 import Layout from './pages/Layout';
-import RegistrationModal from './components/RegistrationModal';
+import SplashPage from './pages/Splash';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <RegistrationModal />
       <Routes>
-        {/* 根路径重定向到 /buy */}
-        <Route path="/" element={<Navigate to="/buy" replace />} />
+        {/* 根路径重定向到 /splash */}
+        <Route path="/" element={<Navigate to="/splash" replace />} />
+        {/* Splash页面 */}
+        <Route path="/splash" element={<SplashPage />} />
         
         {/* 嵌套路由：所有页面使用统一Layout */}
         <Route element={<Layout />}>

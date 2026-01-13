@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Form, InputNumber, Input, Button, Card, Divider, Typography, message } from 'antd';
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
 import { globalDesign, globalStyles } from '../constants/globalDesign';
@@ -128,7 +128,7 @@ const PrivateSalePage: React.FC = () => {
       setPurchaseHash(hash);
       setTransactionStatus(`购买请求已提交，交易哈希：${hash.substring(0, 10)}...${hash.substring(hash.length - 8)}`);
     } catch (error: any) {
-      console.error('购买失败:', error);
+
       let errorMessage = '购买失败，请稍后重试';
       
       // 处理常见错误
@@ -244,14 +244,14 @@ const PrivateSalePage: React.FC = () => {
       const updatedEstimatedUSDT = packagesToBuy * 0.01;
       const updatedRequiredUSDTWei = BigInt(Math.ceil(updatedEstimatedUSDT * 10 ** 18)); // USDT使用18位小数（BSC Testnet）
       
-      console.log('表单提交数据:', values);
-      console.log('当前用户地址:', userAddress);
-      console.log('USDT余额:', usdtBalance, typeof usdtBalance);
-      console.log('USDT授权:', usdtAllowance, typeof usdtAllowance);
-      console.log('预估USDT:', updatedEstimatedUSDT);
-      console.log('requiredUSDTWei:', updatedRequiredUSDTWei, typeof updatedRequiredUSDTWei);
-      console.log('合约状态 - isPaused:', isPaused, 'isEnded:', isEnded);
-      console.log('购买份数:', packagesToBuy);
+
+
+
+
+
+
+
+
       
       // 检查钱包连接
       if (!isConnected || !userAddress) {
@@ -333,7 +333,7 @@ const PrivateSalePage: React.FC = () => {
       // 授权足够，直接购买
       handleBuyTokens(packagesToBuy, referrer);
     } catch (error: any) {
-      console.error('表单提交失败:', error);
+
       let errorMessage = '操作失败，请稍后重试';
       
       // 处理常见错误

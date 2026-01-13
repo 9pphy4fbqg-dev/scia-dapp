@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { useContractRead, useWatchContractEvent } from 'wagmi';
+import React from 'react';
+import { useContractRead } from 'wagmi';
 import { useAccount } from 'wagmi';
 import { referralCenterAbi } from '../abi/referralCenter';
 import { usdtAbi } from '../abi/usdt';
 import { sciaAbi } from '../abi/scia';
 import { privateSaleAbi } from '../abi/privateSale';
-import { useSelector } from 'react-redux';
-import { RootState } from '../app/store';
-import { Badge, Button, Modal, Tree, Table, Tag, Tabs, message } from 'antd';
-import { LoadingOutlined, ReloadOutlined, CopyOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Badge, Button, Modal, Tree, Tabs, message } from 'antd';
+import { LoadingOutlined, CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 
 // 获取合约地址
@@ -17,27 +15,48 @@ const USDT_ADDRESS = import.meta.env.REACT_APP_TESTNET_USDT_ADDRESS as `0x${stri
 const PRIVATE_SALE_CONTRACT_ADDRESS = import.meta.env.REACT_APP_TESTNET_PRIVATE_SALE_CONTRACT_ADDRESS as `0x${string}`;
 const SCIA_ADDRESS = import.meta.env.REACT_APP_TESTNET_SANCIA_TOKEN_ADDRESS as `0x${string}`;
 
-const ProfilePage: React.FC = () => {
+const ProfilePage = () => {
   const { address: userAddress, isConnected } = useAccount();
   
-  // 从Redux store获取用户信息
-  const { username, avatar, createdAt } = useSelector(
-    (state: RootState) => state.user
-  );
+  // 推荐树模态框状态
+  const [treeModalVisible, setTreeModalVisible] = React.useState(false);
+  const [treeData, setTreeData] = React.useState<any[]>([]);
+  const [isLoadingTree, setIsLoadingTree] = React.useState(false);
+  // 推荐统计数据
+  const [referralStats, setReferralStats] = React.useState({
+    directCount: 0,
+    totalCount: 0,
+    totalUSDTReward: '0',
+    totalSCIAReward: '0'
+  });
+  // 推荐人奖励贡献数据
+  const [referralContributions, setReferralContributions] = React.useState<Array<{
+    address: string;
+    totalSCIA: string;
+    totalUSDT: string;
+  }>>([]);
   
-  // 总奖励状态
-  const [totalSCIA, setTotalSCIA] = React.useState<bigint>(0n);
-  const [totalUSDT, setTotalUSDT] = React.useState<bigint>(0n);
+  // 获取直接推荐列表
+  const [directReferrals, setDirectReferrals] = React.useState<Array<{ address: string }>>([]);
+  const [isLoadingReferrals, setIsLoadingReferrals] = React.useState(false);
   
-  // 奖励明细状态
-  const [rewardDetails, setRewardDetails] = React.useState<any[]>([]);
-  const [isLoadingRewardDetails, setIsLoadingRewardDetails] = React.useState(false);
-  const [pagination, setPagination] = React.useState({ current: 1, pageSize: 10, total: 0 });
+  // 检查用户是否有购买记录
+  const { data: purchaseAmount, isLoading: isCheckingPurchase } = useContractRead({
+    address: PRIVATE_SALE_CONTRACT_ADDRESS,
+    abi: privateSaleAbi,
+    functionName: 'purchaseAmounts',
+    args: [userAddress || '0x0000000000000000000000000000000000000000'],
+    query: {
+      enabled: isConnected,
+      refetchInterval: 30000,
+    },
+  });
   
-  // 头像上传状态
-  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  // 计算是否有购买记录
+  const hasPurchaseRecord = React.useMemo(() => {
+    if (!purchaseAmount) return false;
+    return purchaseAmount > 0n;
+  }, [purchaseAmount]);
   
   // 获取用户徽章信息
   const { data: userBadgeInfo, isLoading: isUserBadgeInfoLoading } = useContractRead({
@@ -49,100 +68,6 @@ const ProfilePage: React.FC = () => {
       enabled: isConnected, 
       refetchInterval: 30000, // 每30秒刷新一次
     },
-  });
-  
-  // 从后端获取用户总奖励
-  const fetchUserRewards = async () => {
-    if (!isConnected || !userAddress) return;
-    
-    try {
-      const response = await fetch(`/api/users/${userAddress}`);
-      if (response.ok) {
-        const userData = await response.json();
-        if (userData.data && userData.data.totalRewards) {
-          setTotalSCIA(BigInt(userData.data.totalRewards.scia));
-          setTotalUSDT(BigInt(userData.data.totalRewards.usdt));
-        }
-      }
-    } catch (error) {
-      console.error('获取用户总奖励失败:', error);
-    }
-  };
-  
-  React.useEffect(() => {
-    fetchUserRewards();
-    
-    // 每30秒刷新一次总奖励数据
-    const interval = setInterval(fetchUserRewards, 30000);
-    
-    return () => clearInterval(interval);
-  }, [isConnected, userAddress]);
-  
-  // 从后端获取奖励明细
-  const fetchRewardDetails = async (page: number = 1, limit: number = 10) => {
-    if (!isConnected || !userAddress) return;
-    
-    setIsLoadingRewardDetails(true);
-    try {
-      const response = await fetch(`/api/users/${userAddress}/reward-details?page=${page}&limit=${limit}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data) {
-          setRewardDetails(data.data.rewardDetails);
-          setPagination({
-            current: page,
-            pageSize: limit,
-            total: data.data.pagination.total
-          });
-        }
-      }
-    } catch (error) {
-      console.error('获取奖励明细失败:', error);
-    } finally {
-      setIsLoadingRewardDetails(false);
-    }
-  };
-  
-  React.useEffect(() => {
-    fetchRewardDetails();
-  }, [isConnected, userAddress]);
-  
-  // 处理分页变化
-  const handlePageChange = (page: number, pageSize: number) => {
-    fetchRewardDetails(page, pageSize);
-  };
-  
-  // 监听推荐奖励事件
-  useWatchContractEvent({
-    address: PRIVATE_SALE_CONTRACT_ADDRESS,
-    abi: privateSaleAbi,
-    eventName: 'ReferralRewardDistributed',
-    onLogs(logs) {
-      for (const log of logs) {
-        if (log.args.referrer === userAddress) {
-          // 调用后端API更新奖励
-          fetch(`/api/users/${log.args.referrer}/rewards`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              sciaReward: log.args.sciaReward,
-              usdtReward: log.args.usdtReward,
-              transactionHash: log.transactionHash,
-              relatedAddress: '',
-              rewardSource: 'referral'
-            })
-          }).then(() => {
-            // 更新奖励数据
-            fetchUserRewards();
-            fetchRewardDetails(pagination.current, pagination.pageSize);
-          }).catch(error => {
-            console.error('更新奖励失败:', error);
-          });
-        }
-      }
-    }
   });
 
   // 获取推荐人地址
@@ -157,47 +82,13 @@ const ProfilePage: React.FC = () => {
     },
   });
 
-  // 获取推荐人信息（从后端获取用户名和头像）
-  const [referrerInfo, setReferrerInfo] = React.useState<any>(null);
-  const [isReferrerLoading, setIsReferrerLoading] = React.useState(false);
-
-  // 加载推荐人信息
-  React.useEffect(() => {
-    const loadReferrerInfo = async () => {
-      if (!referrerAddress || referrerAddress === '0x0000000000000000000000000000000000000000') {
-        setReferrerInfo(null);
-        return;
-      }
-
-      setIsReferrerLoading(true);
-      try {
-        const response = await fetch(`/api/users/${referrerAddress}`);
-        if (response.ok) {
-          const data = await response.json();
-          setReferrerInfo(data);
-        }
-      } catch (error) {
-        console.error('获取推荐人信息失败:', error);
-        setReferrerInfo(null);
-      } finally {
-        setIsReferrerLoading(false);
-      }
-    };
-
-    loadReferrerInfo();
-  }, [referrerAddress]);
-
-  // 获取直接推荐列表
-  const [directReferrals, setDirectReferrals] = React.useState<Array<{ address: string; username?: string }>>([]);
-  const [isLoadingReferrals, setIsLoadingReferrals] = React.useState(false);
-
   // 加载直接推荐列表
   const loadDirectReferrals = async () => {
     if (!isConnected || !userAddress) return;
     
     setIsLoadingReferrals(true);
     try {
-      const referrals: Array<{ address: string; username?: string }> = [];
+      const referrals: Array<{ address: string }> = [];
       let index = 0;
       
       // 最多获取5个直接推荐
@@ -218,34 +109,33 @@ const ProfilePage: React.FC = () => {
             ],
           });
 
-          if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000') {
-            // 获取推荐人的用户名
-            try {
-              const response = await fetch(`/api/users/${referralAddress}`);
-              if (response.ok) {
-                const data = await response.json();
-                referrals.push({ 
-                  address: referralAddress, 
-                  username: data.username || undefined 
-                });
-              } else {
-                referrals.push({ address: referralAddress, username: undefined });
-              }
-            } catch (error) {
-              referrals.push({ address: referralAddress, username: undefined });
+          // 正确解析返回值 - eth_call返回的是带前缀的十六进制字符串，需要去除前缀并确保是有效的地址格式
+          if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+            // 去除前缀并确保地址是40个字符
+            let parsedAddress = referralAddress;
+            if (parsedAddress.startsWith('0x')) {
+              parsedAddress = parsedAddress.slice(2);
             }
+            // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
+            if (parsedAddress.length === 64) {
+              parsedAddress = '0x' + parsedAddress.slice(24); // 取后20字节作为地址
+            } else if (parsedAddress.length === 40) {
+              parsedAddress = '0x' + parsedAddress;
+            }
+            
+            referrals.push({ address: parsedAddress });
           } else {
             break;
           }
-        } catch (error) {
+        } catch {
           break;
         }
         index++;
       }
       
       setDirectReferrals(referrals);
-    } catch (error) {
-      console.error('获取直接推荐列表失败:', error);
+    } catch {
+      // 忽略错误
     } finally {
       setIsLoadingReferrals(false);
     }
@@ -256,66 +146,187 @@ const ProfilePage: React.FC = () => {
     loadDirectReferrals();
   }, [isConnected, userAddress]);
 
-  // 推荐树模态框状态
-  const [treeModalVisible, setTreeModalVisible] = React.useState(false);
-  const [treeData, setTreeData] = React.useState<any[]>([]);
-  const [isLoadingTree, setIsLoadingTree] = React.useState(false);
-
-  // 递归构建推荐树
-  const buildReferralTree = async (address: string, depth: number = 0): Promise<any> => {
-    // 获取地址对应的用户名
-    let username = '';
-    try {
-      const response = await fetch(`/api/users/${address}`);
-      if (response.ok) {
-        const data = await response.json();
-        username = data.username || '未设置用户名';
-      } else {
-        username = '未设置用户名';
-      }
-    } catch (error) {
-      username = '未设置用户名';
-    }
-    
+  // 递归构建推荐树并统计推荐人数
+  const buildReferralTree = async (address: string, depth: number = 0): Promise<{ node: any; count: number }> => {
+    // 使用钱包地址作为节点标题
     const node: any = {
-      title: username,
+      title: `${address.slice(0, 8)}...${address.slice(-6)}`,
       key: address,
       children: [],
     };
     
+    let totalCount = 1; // 包括当前节点
     let index = 0;
+    
     while (true) {
       try {
-          const referralAddress = await window.ethereum?.request({
-            method: 'eth_call',
-            params: [
-              {
-                to: REFERRAL_CENTER_ADDRESS,
-                data: `0x${(await import('viem')).encodeFunctionData({
-                  abi: referralCenterAbi,
-                  functionName: 'referrals',
-                  args: [address as `0x${string}`, BigInt(index)]
-                }).slice(2)}`,
-              },
-              'latest',
-            ],
-          });
+        const referralAddress = await window.ethereum?.request({
+          method: 'eth_call',
+          params: [
+            {
+              to: REFERRAL_CENTER_ADDRESS,
+              data: `0x${(await import('viem')).encodeFunctionData({
+                abi: referralCenterAbi,
+                functionName: 'referrals',
+                args: [address as `0x${string}`, BigInt(index)]
+              }).slice(2)}`,
+            },
+            'latest',
+          ],
+        });
         
-        if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000') {
-          const childNode = await buildReferralTree(referralAddress, depth + 1);
+        // 正确解析返回值 - eth_call返回的是带前缀的十六进制字符串，需要去除前缀并确保是有效的地址格式
+        if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+          // 去除前缀并确保地址是40个字符
+          let parsedAddress = referralAddress;
+          if (parsedAddress.startsWith('0x')) {
+            parsedAddress = parsedAddress.slice(2);
+          }
+          // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
+          if (parsedAddress.length === 64) {
+            parsedAddress = '0x' + parsedAddress.slice(24); // 取后20字节作为地址
+          } else if (parsedAddress.length === 40) {
+            parsedAddress = '0x' + parsedAddress;
+          }
+          
+          const { node: childNode, count: childCount } = await buildReferralTree(parsedAddress, depth + 1);
           if (childNode) {
             node.children.push(childNode);
+            totalCount += childCount;
           }
         } else {
           break;
         }
-      } catch (error) {
+      } catch {
         break;
       }
       index++;
     }
     
-    return node.children.length > 0 ? node : null;
+    return { node, count: totalCount };
+  };
+
+  // 计算每个推荐人的贡献和推荐奖励
+  const calculateReferralContributions = async (treeData: any[]) => {
+    if (!isConnected || !userAddress) return;
+    
+    try {
+      // 从推荐树中获取所有被推荐人地址
+      const getAllReferrals = (data: any[]): string[] => {
+        let referrals: string[] = [];
+        
+        const traverse = (nodes: any[]) => {
+          for (const node of nodes) {
+            if (node.key !== userAddress) {
+              referrals.push(node.key);
+            }
+            if (node.children && node.children.length > 0) {
+              traverse(node.children);
+            }
+          }
+        };
+        
+        traverse(data);
+        return referrals;
+      };
+      
+      const allReferrals = getAllReferrals(treeData);
+      
+      // 推荐奖励比例（根据实际合约逻辑调整）
+      const USDT_REWARD_PERCENTAGE = 0.05; // 5% USDT奖励
+      const SCIA_REWARD_PERCENTAGE = 0.05; // 5% SCIA奖励
+      
+      // 核心规则：0.01 USDT = 1000 SCIA
+      const PACKAGE_COST_USDT = 0.01; // 每包成本（USDT）
+      const SCIA_PER_PACKAGE = 1000; // 每包包含的SCIA数量
+      
+      // 为每个被推荐人获取真实购买数据并计算推荐奖励
+      const contributionsArray = await Promise.all(allReferrals.map(async (address) => {
+        try {
+          // 检查window.ethereum是否存在
+          if (!window.ethereum) {
+            return {
+              address,
+              totalSCIA: '0',
+              totalUSDT: '0'
+            };
+          }
+          
+          const viem = await import('viem');
+          
+          // 查询被推荐人的购买金额（返回USDT的wei值）
+          const purchaseAmountResult = await window.ethereum.request({
+            method: 'eth_call',
+            params: [
+              {
+                to: PRIVATE_SALE_CONTRACT_ADDRESS,
+                data: `0x${viem.encodeFunctionData({
+                  abi: privateSaleAbi,
+                  functionName: 'purchaseAmounts',
+                  args: [address as `0x${string}`]
+                }).slice(2)}`,
+              },
+              'latest',
+            ],
+          });
+          
+          // 解析购买金额
+          let purchaseAmountWei = BigInt(0);
+          if (purchaseAmountResult && purchaseAmountResult !== '0x') {
+            purchaseAmountWei = BigInt(purchaseAmountResult);
+          }
+          
+          // 正确计算：0.01 USDT = 1000 SCIA
+          // 1. 先将USDT的wei值转换为USDT金额
+          const usdtAmount = Number(purchaseAmountWei) / (10 ** 18);
+          // 2. 根据比例计算SCIA数量：每0.01 USDT对应1000 SCIA
+          const sciaAmount = usdtAmount * (SCIA_PER_PACKAGE / PACKAGE_COST_USDT);
+          
+          // 返回计算结果，totalSCIA直接存储计算出的SCIA数量
+          return {
+            address,
+            totalSCIA: sciaAmount.toString(),
+            totalUSDT: purchaseAmountWei.toString()
+          };
+        } catch (error) {
+          return {
+            address,
+            totalSCIA: '0',
+            totalUSDT: '0'
+          };
+        }
+      }));
+      
+      // 计算总推荐奖励
+      let totalUSDTReward = BigInt(0);
+      let totalSCIAReward = BigInt(0);
+      
+      for (const contribution of contributionsArray) {
+        const usdtAmount = BigInt(contribution.totalUSDT); // USDT的wei值
+        const sciaAmount = Number(contribution.totalSCIA); // SCIA的数量
+        
+        // 计算奖励并累加到总奖励中
+        // USDT奖励：5%的USDT购买金额（wei值）
+        totalUSDTReward += BigInt(Math.floor(Number(usdtAmount) * USDT_REWARD_PERCENTAGE));
+        
+        // SCIA奖励：5%的SCIA获得数量
+        // 注意：sciaAmount已经是SCIA的数量，转换为wei值后再计算奖励
+        const sciaAmountWei = BigInt(Math.floor(sciaAmount)) * BigInt(10 ** 18);
+        totalSCIAReward += BigInt(Math.floor(Number(sciaAmountWei) * SCIA_REWARD_PERCENTAGE));
+      }
+      
+      // 更新推荐统计数据，包括总奖励
+      setReferralStats(prev => ({
+        ...prev,
+        totalUSDTReward: totalUSDTReward.toString(),
+        totalSCIAReward: totalSCIAReward.toString()
+      }));
+      
+      setReferralContributions(contributionsArray);
+    } catch (error) {
+      // 即使出错，也要设置一个空数组，确保表格显示
+      setReferralContributions([]);
+    }
   };
 
   // 打开推荐树模态框
@@ -326,15 +337,39 @@ const ProfilePage: React.FC = () => {
     setTreeModalVisible(true);
     
     try {
-      const tree = await buildReferralTree(userAddress);
+      const { node: tree, count: totalCount } = await buildReferralTree(userAddress);
+      
       if (tree) {
         setTreeData([tree]);
+        // 计算直接推荐人数（当前节点的子节点数量）
+        const directCount = tree.children.length;
+        // 更新推荐统计数据，保留原有奖励数据
+        setReferralStats(prev => ({
+          ...prev,
+          directCount,
+          totalCount: totalCount - 1 // 减去当前节点本身
+        }));
       } else {
         setTreeData([]);
+        setReferralStats({
+          directCount: 0,
+          totalCount: 0,
+          totalUSDTReward: '0',
+          totalSCIAReward: '0'
+        });
       }
-    } catch (error) {
-      console.error('构建推荐树失败:', error);
+      
+      // 计算每个推荐人的贡献
+      await calculateReferralContributions([tree]);
+    } catch {
       setTreeData([]);
+      setReferralStats({
+        directCount: 0,
+        totalCount: 0,
+        totalUSDTReward: '0',
+        totalSCIAReward: '0'
+      });
+      setReferralContributions([]);
     } finally {
       setIsLoadingTree(false);
     }
@@ -355,7 +390,7 @@ const ProfilePage: React.FC = () => {
   // 分红领取功能（暂时禁用，等待Wagmi 2.0 API确认）
   const isClaimingDividend = false;
   const handleClaimDividend = () => {
-    console.log('领取分红功能暂时禁用，等待Wagmi 2.0 API确认');
+    // 暂时禁用，等待Wagmi 2.0 API确认
   };
 
   // 格式化分红金额
@@ -403,12 +438,6 @@ const ProfilePage: React.FC = () => {
     },
   });
 
-  // 格式化SCIA余额
-  const formatSCIA = (amount: bigint | undefined): string => {
-    if (!amount) return '0';
-    return (Number(amount) / 10 ** 18).toFixed(6);
-  };
-
   // 格式化积分值（积分单位是wei，直接转换为USDT金额，合约已处理测试网参数缩放）
   const formatPoints = (points: bigint | undefined): string => {
     if (!points) return '0';
@@ -425,6 +454,23 @@ const ProfilePage: React.FC = () => {
     return (Number(amount) / 10 ** 18).toFixed(6);
   };
 
+  // 格式化SCIA数量（处理不同类型的输入）
+  const formatSCIA = (amount: any): string => {
+    if (!amount) return '0';
+    // 处理不同类型的输入
+    let numAmount: number;
+    
+    if (typeof amount === 'bigint') {
+      // 从合约读取的SCIA余额是wei单位，需要转换为正常单位
+      numAmount = Number(amount) / (10 ** 18);
+    } else {
+      // 直接使用Number()转换，处理字符串或数字类型
+      numAmount = Number(amount);
+    }
+    
+    return numAmount.toFixed(6);
+  };
+
   // 获取徽章等级名称
   const getBadgeLevelName = (level: number): string => {
     switch (level) {
@@ -436,160 +482,6 @@ const ProfilePage: React.FC = () => {
       default: return '无';
     }
   };
-
-  // 格式化日期
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return '未注册';
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
-  // 格式化奖励金额
-  const formatRewardAmount = (amount: string, type: string): string => {
-    const numAmount = Number(amount) / 10 ** 18;
-    return `${numAmount.toFixed(6)} ${type}`;
-  };
-
-  // 奖励类型标签
-  const getRewardTypeTag = (type: string) => {
-    switch (type) {
-      case 'SCIA':
-        return <Tag color="green">SCIA</Tag>;
-      case 'USDT':
-        return <Tag color="blue">USDT</Tag>;
-      default:
-        return <Tag color="default">{type}</Tag>;
-    }
-  };
-
-  // 奖励来源标签
-  const getRewardSourceTag = (source: string) => {
-    switch (source) {
-      case 'referral':
-        return <Tag color="purple">推荐奖励</Tag>;
-      case 'dividend':
-        return <Tag color="orange">分红</Tag>;
-      default:
-        return <Tag color="default">其他</Tag>;
-    }
-  };
-  
-  // 处理头像文件选择
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // 检查文件类型
-      if (!file.type.startsWith('image/')) {
-        message.error('请选择图片文件');
-        return;
-      }
-      
-      // 检查文件大小（限制10MB）
-      if (file.size > 10 * 1024 * 1024) {
-        message.error('图片大小不能超过10MB');
-        return;
-      }
-      
-      setAvatarFile(file);
-      
-      // 生成预览URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  
-  // 处理更换头像
-  const handleChangeAvatar = async () => {
-    if (!isConnected || !userAddress) {
-      message.error('请先连接钱包');
-      return;
-    }
-    
-    if (!avatarFile) {
-      message.error('请选择要上传的头像');
-      return;
-    }
-    
-    setIsUploadingAvatar(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('avatar', avatarFile);
-      
-      const response = await fetch(`/api/users/${userAddress}`, {
-        method: 'PUT',
-        body: formData,
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        message.success('头像更新成功');
-        // 刷新页面以获取最新数据
-        window.location.reload();
-      } else {
-        const errorData = await response.json();
-        message.error(errorData.message || '头像更新失败');
-      }
-    } catch (error) {
-      console.error('更换头像失败:', error);
-      message.error('网络错误，更换头像失败');
-    } finally {
-      setIsUploadingAvatar(false);
-      setAvatarFile(null);
-      setAvatarPreview(null);
-    }
-  };
-
-  // 奖励明细表格列
-  const rewardDetailColumns = [
-    {
-      title: '奖励类型',
-      dataIndex: 'rewardType',
-      key: 'rewardType',
-      render: (type: string) => getRewardTypeTag(type),
-    },
-    {
-      title: '奖励金额',
-      dataIndex: ['rewardAmount', 'rewardType'],
-      key: 'rewardAmount',
-      render: (values: [string, string]) => formatRewardAmount(values[0], values[1]),
-      sorter: (a: any, b: any) => Number(a.rewardAmount) - Number(b.rewardAmount),
-    },
-    {
-      title: '奖励来源',
-      dataIndex: 'rewardSource',
-      key: 'rewardSource',
-      render: (source: string) => getRewardSourceTag(source),
-    },
-    {
-      title: '相关地址',
-      dataIndex: 'relatedAddress',
-      key: 'relatedAddress',
-      render: (address: string) => {
-        if (!address) return '-';
-        return `${address.slice(0, 8)}...${address.slice(-6)}`;
-      },
-    },
-    {
-      title: '交易哈希',
-      dataIndex: 'transactionHash',
-      key: 'transactionHash',
-      render: (hash: string) => {
-        if (!hash) return '-';
-        return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
-      },
-    },
-    {
-      title: '奖励时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => formatDate(date),
-      sorter: (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    },
-  ];
 
   return (
     <div className="page-container profile-page">
@@ -610,82 +502,17 @@ const ProfilePage: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center'
             }}>
-              {(avatarPreview || avatar) && (
-                <img 
-                  src={avatarPreview || avatar} 
-                  alt="用户头像" 
-                  style={{ 
-                    width: '100px', 
-                    height: '100px', 
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '2px solid #1890ff'
-                  }} 
-                />
-              )}
-              {!avatarPreview && !avatar && (
-                <span style={{ fontSize: '50px' }}>👤</span>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleAvatarFileChange} 
-                style={{ display: 'none' }} 
-                id="avatar-upload"
-              />
-              <label 
-                htmlFor="avatar-upload"
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#1890ff',
-                  color: '#fff',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  border: 'none',
-                  display: 'inline-block',
-                  textAlign: 'center'
-                }}
-              >
-                选择头像
-              </label>
-              {avatarFile && (
-                <Button
-                  type="primary"
-                  onClick={handleChangeAvatar}
-                  loading={isUploadingAvatar}
-                  size="small"
-                >
-                  确认更换
-                </Button>
-              )}
-              {avatarPreview && !avatarFile && (
-                <Button
-                  type="default"
-                  onClick={() => {
-                    setAvatarPreview(null);
-                    setAvatarFile(null);
-                  }}
-                  size="small"
-                >
-                  取消预览
-                </Button>
-              )}
+              {/* 默认头像，移除自定义头像功能 */}
+              <span style={{ fontSize: '50px' }}>👤</span>
             </div>
           </div>
           <div className="user-info">
-            <p>用户名：{username || '未设置'}</p>
             <p>钱包地址：{isConnected ? userAddress?.slice(0, 10) + '...' + userAddress?.slice(-8) : '未连接'}</p>
-            <p>注册时间：{formatDate(createdAt)}</p>
             <p>
               推荐人：
-              {isReferrerLoading ? (
-                <LoadingOutlined /> + ' 加载中...'
-              ) : referrerAddress && referrerAddress !== '0x0000000000000000000000000000000000000000' ? (
+              {referrerAddress && referrerAddress !== '0x0000000000000000000000000000000000000000' ? (
                 <span>
-                  {referrerInfo?.username || '未设置用户名'}
+                  {referrerAddress.slice(0, 10) + '...' + referrerAddress.slice(-8)}
                 </span>
               ) : (
                 <span>无</span>
@@ -711,7 +538,7 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="points-info">
-            <h3>积分信息</h3>
+            <h3>积分与奖励</h3>
             {(isUserBadgeInfoLoading || isUSDTBalanceLoading || isUSDTAllowanceLoading || isSCIABalanceLoading) ? (
               <p>加载中...</p>
             ) : (
@@ -723,6 +550,8 @@ const ProfilePage: React.FC = () => {
               </>
             )}
           </div>
+          
+          {/* 推荐统计功能已整合到查询所有推荐树中 */}
 
           {/* 分红领取功能 */}
           <div className="dividend-info">
@@ -749,165 +578,160 @@ const ProfilePage: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="referral-info">
+        <div className="referral-info" style={{ backgroundColor: '#f5f5f5', borderRadius: '8px', padding: '16px', margin: '16px 0' }}>
           <Tabs defaultActiveKey="promotion">
             <Tabs.TabPane tab="推广信息" key="promotion">
-              <div className="referral-link" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <p>推广链接：</p>
-                <input
-                  type="text"
-                  value={`https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`}
-                  readOnly
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #d9d9d9',
-                    backgroundColor: '#fff',
-                    color: '#000',
-                  }}
-                />
-                <Button
-                  icon={<CopyOutlined />}
-                  onClick={() => {
-                    const referralLink = `https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
-                    navigator.clipboard.writeText(referralLink)
-                      .then(() => {
-                        message.success('复制成功！');
-                      })
-                      .catch(() => {
-                        message.error('复制失败，请手动复制');
-                      });
-                  }}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  复制链接
-                </Button>
-              </div>
-              <div className="referral-qr" style={{ marginBottom: '16px' }}>
-                <p>推广二维码：</p>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  gap: '16px' 
-                }}>
-                  <div className="qr-code" style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#fff', 
-                    borderRadius: '8px',
-                    display: 'inline-block'
-                  }}>
-                    <QRCodeSVG 
-                      value={`https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`} 
-                      size={200} 
-                      level="H" 
-                      includeMargin={true} 
+              {isCheckingPurchase ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <LoadingOutlined spin style={{ fontSize: 24 }} />
+                  <p style={{ marginTop: 10 }}>正在检查购买记录...</p>
+                </div>
+              ) : hasPurchaseRecord ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0' }}>
+                  <div className="referral-link" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <p style={{ margin: 0 }}>推广链接：</p>
+                    <input
+                      type="text"
+                      value={`https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`}
+                      readOnly
+                      style={{
+                        flex: 1,
+                        minWidth: '200px',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #d9d9d9',
+                        backgroundColor: '#fff',
+                        color: '#000',
+                      }}
                     />
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={() => {
+                        const referralLink = `https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
+                        navigator.clipboard.writeText(referralLink)
+                          .then(() => {
+                            message.success('复制成功！');
+                          })
+                          .catch(() => {
+                            message.error('复制失败，请手动复制');
+                          });
+                      }}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      复制链接
+                    </Button>
                   </div>
-                  <Button
-                    icon={<DownloadOutlined />}
-                    onClick={() => {
-                      // 生成真实的二维码并下载
-                      const qrValue = `https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
-                      
-                      // 创建一个临时容器来渲染二维码
-                      const tempContainer = document.createElement('div');
-                      document.body.appendChild(tempContainer);
-                      
-                      // 使用ReactDOMServer将QRCodeSVG组件渲染为HTML字符串
-                      const { renderToString } = require('react-dom/server');
-                      const qrCodeHtml = renderToString(
-                        React.createElement(QRCodeSVG, {
-                          value: qrValue,
-                          size: 400, // 生成更大的二维码，提高清晰度
-                          level: 'H',
-                          includeMargin: true,
-                          bgColor: '#ffffff',
-                          fgColor: '#000000'
-                        })
-                      );
-                      
-                      // 将HTML字符串转换为完整的SVG
-                      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>\n${qrCodeHtml}`;
-                      
-                      // 创建Blob对象
-                      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-                      
-                      // 创建下载链接
-                      const downloadLink = document.createElement('a');
-                      downloadLink.href = URL.createObjectURL(blob);
-                      downloadLink.download = `SCIA推广二维码_${userAddress?.slice(0, 8) || 'unknown'}.svg`;
-                      downloadLink.click();
-                      
-                      // 清理临时容器
-                      document.body.removeChild(tempContainer);
-                    }}
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
-                    下载二维码
-                  </Button>
-                </div>
-              </div>
-              <div className="direct-referrals">
-                <h4>直接推荐（最近5人）</h4>
-                {isLoadingReferrals ? (
-                  <LoadingOutlined /> + ' 加载中...'
-                ) : directReferrals.length > 0 ? (
-                  <ul>
-                    {directReferrals.map((referral, index) => (
-                      <li key={index}>
-                        <Badge status="success" /> {referral.username || '未设置用户名'}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>暂无推荐记录</p>
-                )}
-              </div>
-              <div className="total-rewards">
-                <h4>总奖励</h4>
-                <p>SCIA奖励：{formatSCIA(totalSCIA)}</p>
-                <p>USDT奖励：{formatUSDT(totalUSDT)}</p>
-              </div>
-              <Button 
-                type="primary" 
-                className="view-all-referrals-btn"
-                onClick={handleViewReferralTree}
-                loading={isLoadingTree}
-              >
-                查询所有推荐树
-              </Button>
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="奖励明细" key="rewards">
-              <div className="reward-details-container">
-                <div className="reward-details-header">
-                  <h4>奖励明细</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                    <p style={{ margin: 0 }}>推广二维码：</p>
+                    <div className="qr-code" style={{ 
+                      padding: '10px', 
+                      backgroundColor: '#fff', 
+                      borderRadius: '8px',
+                      border: '1px solid #d9d9d9',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px',
+                      alignSelf: 'flex-start'
+                    }}>
+                      <QRCodeSVG 
+                        value={`https://scia-dapp.com?ref=${userAddress}`} 
+                        size={140} 
+                        level="H" 
+                        includeMargin={false} 
+                        bgColor="#ffffff" 
+                        fgColor="#000000" 
+                      />
+                      <Button
+                        size="small"
+                        icon={<DownloadOutlined />}
+                        onClick={() => {
+                          // 生成真实的二维码并下载
+                          const qrValue = `https://scia-dapp.com?ref=${userAddress}`;
+                            
+                          // 创建一个临时容器来渲染二维码
+                          const tempContainer = document.createElement('div');
+                          document.body.appendChild(tempContainer);
+                            
+                          // 使用ReactDOMServer将QRCodeSVG组件渲染为HTML字符串
+                          const { renderToString } = require('react-dom/server');
+                          const qrCodeHtml = renderToString(
+                            React.createElement(QRCodeSVG, {
+                              value: qrValue,
+                              size: 400, // 生成更大的二维码，提高清晰度
+                              level: 'H',
+                              includeMargin: false,
+                              bgColor: '#ffffff',
+                              fgColor: '#000000'
+                            })
+                          );
+                            
+                          // 将HTML字符串转换为完整的SVG
+                          const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+${qrCodeHtml}`;
+                            
+                          // 创建Blob对象
+                          const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                            
+                          // 创建下载链接
+                          const downloadLink = document.createElement('a');
+                          downloadLink.href = URL.createObjectURL(blob);
+                          downloadLink.download = `SCIA推广二维码_${userAddress?.slice(0, 8)}.svg`;
+                          downloadLink.click();
+                            
+                          // 清理临时容器
+                          document.body.removeChild(tempContainer);
+                        }}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        下载二维码
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="direct-referrals" style={{ marginTop: '8px' }}>
+                    <h4 style={{ margin: '0 0 8px 0' }}>直接推荐（最近5人）</h4>
+                    {isLoadingReferrals ? (
+                      <p>加载中...</p>
+                    ) : directReferrals.length > 0 ? (
+                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                        {directReferrals.map((referral, index) => (
+                          <li key={index}>
+                            <Badge status="success" /> {referral.address.slice(0, 10) + '...' + referral.address.slice(-8)}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>暂无推荐记录</p>
+                    )}
+                  </div>
                   <Button 
-                    type="text" 
-                    icon={<ReloadOutlined />} 
-                    onClick={() => fetchRewardDetails()}
-                    loading={isLoadingRewardDetails}
-                    style={{ marginBottom: 16 }}
+                    type="primary" 
+                    className="view-all-referrals-btn"
+                    onClick={handleViewReferralTree}
+                    loading={isLoadingTree}
                   >
-                    刷新
+                    查询所有推荐树（包含推荐统计）
                   </Button>
                 </div>
-                <Table
-                  columns={rewardDetailColumns}
-                  dataSource={rewardDetails}
-                  rowKey="_id"
-                  loading={isLoadingRewardDetails}
-                  pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    onChange: handlePageChange,
-                  }}
-                  bordered
-                  scroll={{ x: 800 }}
-                />
-              </div>
+              ) : (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '20px', 
+                  backgroundColor: 'rgba(255, 173, 173, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid #ff4d4f'
+                }}>
+                  <h3 style={{ color: '#ff4d4f', marginBottom: '16px' }}>暂无推广权限</h3>
+                  <p>根据合约规则，您需要先购买SCIA代币才能获取专属推广链接和二维码</p>
+                  <Button 
+                    type="primary" 
+                    style={{ marginTop: '16px' }}
+                    onClick={() => window.location.href = '/buy'}
+                  >
+                    立即购买
+                  </Button>
+                </div>
+              )}
             </Tabs.TabPane>
           </Tabs>
         </div>
@@ -925,16 +749,80 @@ const ProfilePage: React.FC = () => {
                 <LoadingOutlined spin style={{ fontSize: 48 }} />
                 <p style={{ marginTop: 20 }}>正在加载推荐树...</p>
               </div>
-            ) : treeData.length > 0 ? (
-              <Tree
-                treeData={treeData}
-                defaultExpandAll
-                showIcon
-              />
             ) : (
-              <div style={{ textAlign: 'center', padding: '50px' }}>
-                <p>暂无推荐关系</p>
-              </div>
+              <>
+                {/* 推荐统计信息 */}
+                <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                  <h4>推荐统计</h4>
+                  <div style={{ display: 'flex', gap: '32px' }}>
+                    <div>
+                      <p>直接推荐人数：{referralStats.directCount}</p>
+                    </div>
+                    <div>
+                      <p>总推荐人数：{referralStats.totalCount}</p>
+                    </div>
+                    <div>
+                      <p>总USDT奖励：{formatUSDT(BigInt(referralStats.totalUSDTReward))}</p>
+                    </div>
+                    <div>
+                      <p>总SCIA奖励：{formatSCIA(Number(referralStats.totalSCIAReward) / (10 ** 18))}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 推荐人贡献列表 */}
+                <div style={{ marginBottom: '20px' }}>
+                  <h4>被推荐人购买明细</h4>
+                  {referralContributions.length > 0 ? (
+                    <>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f5f5f5' }}>
+                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>被推荐人</th>
+                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>购买SCIA数量</th>
+                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>购买USDT金额</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {referralContributions.map((contribution, index) => (
+                            <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                                {contribution.address.slice(0, 10)}...{contribution.address.slice(-8)}
+                              </td>
+                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                                {formatSCIA(contribution.totalSCIA)}
+                              </td>
+                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                                {formatUSDT(BigInt(contribution.totalUSDT))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                        注：以上为被推荐人的真实购买数据，推荐奖励根据合约规则（USDT 5% + SCIA 5%）自动计算
+                      </p>
+                    </>
+                  ) : (
+                    <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                      暂无被推荐人购买记录
+                    </p>
+                  )}
+                </div>
+                
+                {/* 推荐树展示 */}
+                {treeData.length > 0 ? (
+                  <Tree
+                    treeData={treeData}
+                    defaultExpandAll
+                    showIcon
+                  />
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '50px' }}>
+                    <p>暂无推荐关系</p>
+                  </div>
+                )}
+              </>
             )}
           </Modal>
       </section>
