@@ -609,6 +609,35 @@ const StatisticsPage = () => {
           style={{ ...CARD_STYLE, marginBottom: CARD_MARGIN_BOTTOM }}
           headStyle={CARD_HEAD_STYLE}
         >
+          <Row gutter={16} align="middle" style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: `1px solid ${COLORS.border}` }}>
+            <Col xs={24} sm={24} md={8}>
+              <Title level={4} style={{ color: COLORS.textPrimary, margin: 0, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold' }}>销售进度</Title>
+              <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>
+                {poolInfo ? `${Number(poolInfo[4]) / 10 ** 18} SCIA / ${(Number(poolInfo[0]) + Number(poolInfo[4])) / 10 ** 18} SCIA` : '0 / 0'}
+              </Text>
+            </Col>
+            <Col xs={24} sm={24} md={16}>
+              <Progress 
+                percent={calculateSaleProgress() || 0} 
+                strokeColor={{
+                  '0%': '#1890ff',
+                  '100%': '#52c41a',
+                }} 
+                style={{ marginBottom: '8px' }}
+                strokeWidth={10}
+                format={percent => (
+                  <span style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: FONT_SIZES.bodyLarge }}>
+                    {(percent || 0).toFixed(1)}%
+                  </span>
+                )}
+                trailColor="rgba(255, 255, 255, 0.1)"
+              />
+              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZES.bodySmall, display: 'block', textAlign: 'center' }}>
+                实时更新中...
+              </Text>
+            </Col>
+          </Row>
+          
           <Row gutter={16}>
             {/* 当前设备信息 */}
             <Col xs={24} sm={12} md={8}>
@@ -1084,47 +1113,7 @@ const StatisticsPage = () => {
           </Row>
         </Card>
 
-        {/* 销售进度 */}
-        <Card 
-          style={{ 
-            ...CARD_STYLE, 
-            marginBottom: CARD_MARGIN_BOTTOM,
-            padding: '24px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-            transition: 'all 0.3s ease-in-out, transform 0.3s ease-out, box-shadow 0.3s ease-out',
-            transform: 'translateY(0)'
-          }}
-          hoverable
-        >
-          <Row gutter={16} align="middle">
-            <Col xs={24} sm={24} md={8}>
-              <Title level={4} style={{ color: COLORS.textPrimary, margin: 0, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold' }}>销售进度</Title>
-              <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>
-                {poolInfo ? `${Number(poolInfo[4]) / 10 ** 18} SCIA / ${(Number(poolInfo[0]) + Number(poolInfo[4])) / 10 ** 18} SCIA` : '0 / 0'}
-              </Text>
-            </Col>
-            <Col xs={24} sm={24} md={16}>
-              <Progress 
-                percent={calculateSaleProgress() || 0} 
-                strokeColor={{
-                  '0%': '#1890ff',
-                  '100%': '#52c41a',
-                }} 
-                style={{ marginBottom: '8px' }}
-                strokeWidth={10}
-                format={percent => (
-                  <span style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: FONT_SIZES.bodyLarge }}>
-                    {(percent || 0).toFixed(1)}%
-                  </span>
-                )}
-                trailColor="rgba(255, 255, 255, 0.1)"
-              />
-              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZES.bodySmall, display: 'block', textAlign: 'center' }}>
-                实时更新中...
-              </Text>
-            </Col>
-          </Row>
-        </Card>
+
       </Spin>
     </div>
   );
