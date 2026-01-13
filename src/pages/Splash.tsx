@@ -27,7 +27,7 @@ const Splash: React.FC = () => {
       // 触发动画：先设置初始状态，然后立即开始动画
       setTimeout(() => {
         if (logoRef.current) {
-          logoRef.current.style.width = '100vw';
+          logoRef.current.style.width = '50vw';
         }
       }, 10);
     }

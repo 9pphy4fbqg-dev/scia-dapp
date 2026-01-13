@@ -103,6 +103,24 @@ const PrivateSalePage: React.FC = () => {
     return poolInfo[0] >= sciaAmount; // poolInfo[0] is remainingPrivateSale
   };
 
+  // 检查USDT余额是否足够
+  const isBalanceSufficient = (): boolean => {
+    if (!usdtBalance) return true; // 初始状态下允许提交，后续会检查
+    const balance = Number(usdtBalance) / 10 ** 18; // USDT使用18位小数（BSC Testnet）
+    return balance >= estimatedUSDT;
+  };
+
+  // 检查USDT授权是否足够
+  const isAllowanceSufficient = (): boolean => {
+    if (usdtAllowance === undefined) return true; // 初始状态下允许提交，后续会检查
+    return usdtAllowance >= requiredUSDTWei;
+  };
+
+  // 获取钱包客户端
+  const { data: walletClient } = useWalletClient();
+  const [isApproving, setIsApproving] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
+
   // 购买代币方法
   const handleBuyTokens = async (packagesToBuy: number, referrer: string) => {
     try {
@@ -150,24 +168,6 @@ const PrivateSalePage: React.FC = () => {
       setIsBuying(false);
     }
   };
-
-  // 检查USDT余额是否足够
-  const isBalanceSufficient = (): boolean => {
-    if (!usdtBalance) return true; // 初始状态下允许提交，后续会检查
-    const balance = Number(usdtBalance) / 10 ** 18; // USDT使用18位小数（BSC Testnet）
-    return balance >= estimatedUSDT;
-  };
-
-  // 检查USDT授权是否足够
-  const isAllowanceSufficient = (): boolean => {
-    if (usdtAllowance === undefined) return true; // 初始状态下允许提交，后续会检查
-    return usdtAllowance >= requiredUSDTWei;
-  };
-
-  // 获取钱包客户端
-  const { data: walletClient } = useWalletClient();
-  const [isApproving, setIsApproving] = useState(false);
-  const [isBuying, setIsBuying] = useState(false);
 
   // 监听授权交易确认
   const { isLoading: isApprovalConfirming, isSuccess: isApprovalConfirmed, isError: isApprovalFailed, error: approvalError } = useWaitForTransactionReceipt({

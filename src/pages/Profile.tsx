@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useContractRead } from 'wagmi';
 import { useAccount } from 'wagmi';
 import { referralCenterAbi } from '../abi/referralCenter';
@@ -15,26 +15,47 @@ const USDT_ADDRESS = import.meta.env.REACT_APP_TESTNET_USDT_ADDRESS as `0x${stri
 const PRIVATE_SALE_CONTRACT_ADDRESS = import.meta.env.REACT_APP_TESTNET_PRIVATE_SALE_CONTRACT_ADDRESS as `0x${string}`;
 const SCIA_ADDRESS = import.meta.env.REACT_APP_TESTNET_SANCIA_TOKEN_ADDRESS as `0x${string}`;
 
+// 常量定义
+const REFRESH_INTERVAL = 30000; // 30秒
+const MAX_DIRECT_REFERRALS = 5; // 最多显示5个直接推荐
+const WEI_TO_USDT = 10 ** 18; // wei到USDT的转换因子
+
+// 类型定义
+interface ReferralNode {
+  title: string;
+  key: string;
+  children: ReferralNode[];
+}
+
+interface ReferralStats {
+  directCount: number;
+  totalCount: number;
+  totalUSDTReward: string;
+  totalSCIAReward: string;
+}
+
+interface ReferralContribution {
+  address: string;
+  totalSCIA: string;
+  totalUSDT: string;
+}
+
 const ProfilePage = () => {
   const { address: userAddress, isConnected } = useAccount();
   
   // 推荐树模态框状态
   const [treeModalVisible, setTreeModalVisible] = React.useState(false);
-  const [treeData, setTreeData] = React.useState<any[]>([]);
+  const [treeData, setTreeData] = React.useState<ReferralNode[]>([]);
   const [isLoadingTree, setIsLoadingTree] = React.useState(false);
   // 推荐统计数据
-  const [referralStats, setReferralStats] = React.useState({
+  const [referralStats, setReferralStats] = React.useState<ReferralStats>({
     directCount: 0,
     totalCount: 0,
     totalUSDTReward: '0',
     totalSCIAReward: '0'
   });
   // 推荐人奖励贡献数据
-  const [referralContributions, setReferralContributions] = React.useState<Array<{
-    address: string;
-    totalSCIA: string;
-    totalUSDT: string;
-  }>>([]);
+  const [referralContributions, setReferralContributions] = React.useState<ReferralContribution[]>([]);
   
   // 获取直接推荐列表
   const [directReferrals, setDirectReferrals] = React.useState<Array<{ address: string }>>([]);
@@ -48,7 +69,7 @@ const ProfilePage = () => {
     args: [userAddress || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected,
-      refetchInterval: 30000,
+      refetchInterval: REFRESH_INTERVAL,
     },
   });
   
@@ -66,7 +87,7 @@ const ProfilePage = () => {
     args: [userAddress || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected, 
-      refetchInterval: 30000, // 每30秒刷新一次
+      refetchInterval: REFRESH_INTERVAL, // 每30秒刷新一次
     },
   });
 
@@ -78,21 +99,41 @@ const ProfilePage = () => {
     args: [userAddress || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected,
-      refetchInterval: 30000,
+      refetchInterval: REFRESH_INTERVAL,
     },
   });
 
+  // 解析合约返回的地址
+  const parseContractAddress = useCallback((address: string | undefined): string | null => {
+    if (!address || address === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      return null;
+    }
+
+    let parsedAddress = address;
+    if (parsedAddress.startsWith('0x')) {
+      parsedAddress = parsedAddress.slice(2);
+    }
+    
+    // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
+    if (parsedAddress.length === 64) {
+      return '0x' + parsedAddress.slice(24); // 取后20字节作为地址
+    } else if (parsedAddress.length === 40) {
+      return '0x' + parsedAddress;
+    }
+    
+    return null;
+  }, []);
+
   // 加载直接推荐列表
-  const loadDirectReferrals = async () => {
+  const loadDirectReferrals = useCallback(async () => {
     if (!isConnected || !userAddress) return;
     
     setIsLoadingReferrals(true);
     try {
       const referrals: Array<{ address: string }> = [];
-      let index = 0;
       
-      // 最多获取5个直接推荐
-      while (referrals.length < 5) {
+      // 最多获取指定数量的直接推荐
+      for (let index = 0; index < MAX_DIRECT_REFERRALS; index++) {
         try {
           const referralAddress = await window.ethereum?.request({
             method: 'eth_call',
@@ -109,20 +150,8 @@ const ProfilePage = () => {
             ],
           });
 
-          // 正确解析返回值 - eth_call返回的是带前缀的十六进制字符串，需要去除前缀并确保是有效的地址格式
-          if (referralAddress && referralAddress !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-            // 去除前缀并确保地址是40个字符
-            let parsedAddress = referralAddress;
-            if (parsedAddress.startsWith('0x')) {
-              parsedAddress = parsedAddress.slice(2);
-            }
-            // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
-            if (parsedAddress.length === 64) {
-              parsedAddress = '0x' + parsedAddress.slice(24); // 取后20字节作为地址
-            } else if (parsedAddress.length === 40) {
-              parsedAddress = '0x' + parsedAddress;
-            }
-            
+          const parsedAddress = parseContractAddress(referralAddress);
+          if (parsedAddress) {
             referrals.push({ address: parsedAddress });
           } else {
             break;
@@ -130,7 +159,6 @@ const ProfilePage = () => {
         } catch {
           break;
         }
-        index++;
       }
       
       setDirectReferrals(referrals);
@@ -139,12 +167,12 @@ const ProfilePage = () => {
     } finally {
       setIsLoadingReferrals(false);
     }
-  };
+  }, [isConnected, userAddress, parseContractAddress]);
 
   // 组件挂载时加载直接推荐列表
   React.useEffect(() => {
     loadDirectReferrals();
-  }, [isConnected, userAddress]);
+  }, [loadDirectReferrals]);
 
   // 递归构建推荐树并统计推荐人数
   const buildReferralTree = async (address: string, depth: number = 0): Promise<{ node: any; count: number }> => {
@@ -211,26 +239,20 @@ const ProfilePage = () => {
     if (!isConnected || !userAddress) return;
     
     try {
-      // 从推荐树中获取所有被推荐人地址
-      const getAllReferrals = (data: any[]): string[] => {
-        let referrals: string[] = [];
+      // 从推荐树中只获取直接被推荐人地址
+      const getDirectReferrals = (data: any[]): string[] => {
+        let directReferrals: string[] = [];
         
-        const traverse = (nodes: any[]) => {
-          for (const node of nodes) {
-            if (node.key !== userAddress) {
-              referrals.push(node.key);
-            }
-            if (node.children && node.children.length > 0) {
-              traverse(node.children);
-            }
-          }
-        };
+        // 只获取当前用户的直接推荐人（树的第一层子节点）
+        const rootNode = data[0];
+        if (rootNode && rootNode.children && rootNode.children.length > 0) {
+          directReferrals = rootNode.children.map((child: any) => child.key);
+        }
         
-        traverse(data);
-        return referrals;
+        return directReferrals;
       };
       
-      const allReferrals = getAllReferrals(treeData);
+      const allReferrals = getDirectReferrals(treeData);
       
       // 推荐奖励比例（根据实际合约逻辑调整）
       const USDT_REWARD_PERCENTAGE = 0.05; // 5% USDT奖励
@@ -383,21 +405,21 @@ const ProfilePage = () => {
     args: [userAddress || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected,
-      refetchInterval: 30000,
+      refetchInterval: REFRESH_INTERVAL,
     },
   });
 
   // 分红领取功能（暂时禁用，等待Wagmi 2.0 API确认）
   const isClaimingDividend = false;
-  const handleClaimDividend = () => {
+  const handleClaimDividend = useCallback(() => {
     // 暂时禁用，等待Wagmi 2.0 API确认
-  };
+  }, []);
 
   // 格式化分红金额
-  const formatDividend = (amount: bigint | undefined): string => {
+  const formatDividend = useCallback((amount: bigint | undefined): string => {
     if (!amount) return '0';
-    return (Number(amount) / 10 ** 18).toFixed(6);
-  };
+    return (Number(amount) / WEI_TO_USDT).toFixed(6);
+  }, []);
 
   // 获取USDT余额
   const { data: usdtBalance, isLoading: isUSDTBalanceLoading } = useContractRead({
@@ -407,7 +429,7 @@ const ProfilePage = () => {
     args: [userAddress as `0x${string}` || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected && !!userAddress,
-      refetchInterval: 30000, // 每30秒刷新一次
+      refetchInterval: REFRESH_INTERVAL, // 每30秒刷新一次
     },
   });
 
@@ -422,7 +444,7 @@ const ProfilePage = () => {
     ],
     query: {
       enabled: isConnected && !!userAddress,
-      refetchInterval: 30000, // 每30秒刷新一次
+      refetchInterval: REFRESH_INTERVAL, // 每30秒刷新一次
     },
   });
 
@@ -434,54 +456,55 @@ const ProfilePage = () => {
     args: [userAddress as `0x${string}` || '0x0000000000000000000000000000000000000000'],
     query: {
       enabled: isConnected && !!userAddress,
-      refetchInterval: 30000, // 每30秒刷新一次
+      refetchInterval: REFRESH_INTERVAL, // 每30秒刷新一次
     },
   });
 
   // 格式化积分值（积分单位是wei，直接转换为USDT金额，合约已处理测试网参数缩放）
-  const formatPoints = (points: bigint | undefined): string => {
+  const formatPoints = useCallback((points: bigint | undefined): string => {
     if (!points) return '0';
     
     // 转换为USDT金额（1 USDT = 10^18 wei）
-    const usdtAmount = Number(points) / 10 ** 18;
+    const usdtAmount = Number(points) / WEI_TO_USDT;
     
     return usdtAmount.toFixed(2);
-  };
+  }, []);
 
   // 格式化USDT金额（从wei转换为USDT）
-  const formatUSDT = (amount: bigint | undefined): string => {
+  const formatUSDT = useCallback((amount: bigint | undefined): string => {
     if (!amount) return '0';
-    return (Number(amount) / 10 ** 18).toFixed(6);
-  };
+    return (Number(amount) / WEI_TO_USDT).toFixed(6);
+  }, []);
 
   // 格式化SCIA数量（处理不同类型的输入）
-  const formatSCIA = (amount: any): string => {
+  const formatSCIA = useCallback((amount: any): string => {
     if (!amount) return '0';
     // 处理不同类型的输入
     let numAmount: number;
     
     if (typeof amount === 'bigint') {
       // 从合约读取的SCIA余额是wei单位，需要转换为正常单位
-      numAmount = Number(amount) / (10 ** 18);
+      numAmount = Number(amount) / WEI_TO_USDT;
     } else {
       // 直接使用Number()转换，处理字符串或数字类型
       numAmount = Number(amount);
     }
     
     return numAmount.toFixed(6);
-  };
+  }, []);
 
   // 获取徽章等级名称
-  const getBadgeLevelName = (level: number): string => {
-    switch (level) {
-      case 0: return '无';
-      case 1: return '会员';
-      case 2: return '市级';
-      case 3: return '省级';
-      case 4: return '国家级';
-      default: return '无';
-    }
-  };
+  const getBadgeLevelName = useCallback((level: number): string => {
+    const levelMap: Record<number, string> = {
+      0: '无',
+      1: '会员',
+      2: '市级',
+      3: '省级',
+      4: '国家级'
+    };
+    
+    return levelMap[level] || '无';
+  }, []);
 
   return (
     <div className="page-container profile-page">

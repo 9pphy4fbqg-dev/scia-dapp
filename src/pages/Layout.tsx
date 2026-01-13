@@ -20,8 +20,7 @@ const Layout: React.FC = () => {
     { path: '/community', text: '社区', icon: <TeamOutlined /> },
     { path: '/mall', text: '商城', icon: <ShoppingCartOutlined /> },
     { path: '/nft', text: 'NFT', icon: <PictureOutlined /> },
-    { path: '/me', text: '我', icon: <UserOutlined /> },
-    { path: '/statistics', text: '统计', icon: <BarChartOutlined /> }
+    { path: '/me', text: '我', icon: <UserOutlined /> }
   ];
 
   const { isConnected } = useAccount();

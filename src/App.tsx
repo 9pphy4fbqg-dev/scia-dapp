@@ -5,6 +5,8 @@ import PrivateSalePage from './pages/PrivateSale';
 import ProfilePage from './pages/Profile';
 import Layout from './pages/Layout';
 import SplashPage from './pages/Splash';
+import StatisticsPage from './pages/Statistics';
+
 
 const App: React.FC = () => {
   return (
@@ -19,12 +21,11 @@ const App: React.FC = () => {
         <Route element={<Layout />}>
           <Route path="/buy" element={<PrivateSalePage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/data" element={<div>该功能正在开发中</div>} />
+          <Route path="/data" element={<StatisticsPage />} />
           <Route path="/community" element={<div>该功能正在开发中</div>} />
           <Route path="/mall" element={<div>该功能正在开发中</div>} />
           <Route path="/nft" element={<div>该功能正在开发中</div>} />
           <Route path="/me" element={<ProfilePage />} />
-          <Route path="/statistics" element={<div>该功能正在开发中</div>} />
         </Route>
       </Routes>
     </Router>
