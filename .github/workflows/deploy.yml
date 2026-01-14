@@ -6,6 +6,12 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+# 权限配置
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 # 环境变量配置
 env:
   NODE_VERSION: '18'
@@ -63,15 +69,27 @@ jobs:
           path: dist/
 
       # =====================================
-      # 部署到GitHub Pages（可选）
+      # 部署到GitHub Pages（推荐）
       # =====================================
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
           # 可选：自定义域名
           # cname: your-domain.com
+          
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+          
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        id: deployment
+        with:
+          artifact_name: github-pages
+          
+      - name: Output deployment URL
+        run: echo "Deployment URL: ${{ steps.deployment.outputs.page_url }}"
 
       # =====================================
       # 部署到Vercel（可选）
