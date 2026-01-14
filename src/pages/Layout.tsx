@@ -182,260 +182,114 @@ const Layout: React.FC = () => {
   }, [scanModalVisible]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#000000', color: '#ffffff' }}>
+    <div className="layout-container">
       {/* 顶部导航栏 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px 16px',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <div style={{ width: '24px', height: '24px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+      <div className="top-nav">
+        <div className="top-nav-left">
+          <div className="nav-icon">
             <ScanOutlined onClick={handleScanClick} />
           </div>
-          <div style={{ width: '24px', height: '24px', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <div className="nav-icon">
             <TranslationOutlined onClick={toggleLanguage} />
           </div>
         </div>
         
-        {/* 放大彩色LOGO文字一倍并加粗 */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          display: 'flex',
-          alignItems: 'center',
-          fontSize: '32px',
-          fontWeight: 'bold',
-          lineHeight: '1'
-        }}>
-          <span style={{ color: '#FF0000', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>S</span>
-          <span style={{ color: '#FFA500', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>a</span>
-          <span style={{ color: '#FFFF00', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>n</span>
-          <span style={{ color: '#008000', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>c</span>
-          <span style={{ color: '#00FFFF', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>i</span>
-          <span style={{ color: '#0000FF', fontSize: '32px', fontWeight: 'bold', display: 'inline-block' }}>a</span>
+        {/* LOGO */}
+        <div className="logo-container">
+          <span className="logo-letter logo-letter-S">S</span>
+          <span className="logo-letter logo-letter-a1">a</span>
+          <span className="logo-letter logo-letter-n">n</span>
+          <span className="logo-letter logo-letter-c">c</span>
+          <span className="logo-letter logo-letter-i">i</span>
+          <span className="logo-letter logo-letter-a2">a</span>
         </div>
         
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          minWidth: '150px',
-          justifyContent: 'flex-end'
-        }}>
+        <div className="top-nav-right">
           {/* 使用RainbowKit的ConnectButton组件 */}
           <ConnectButton />
         </div>
       </div>
       
       {/* 主要内容区域 */}
-      <div style={{ flex: 1, padding: '16px', backgroundColor: '#000000' }}>
+      <div className="main-content">
         <Outlet />
       </div>
       
       {/* 底部导航栏 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        padding: '8px 0',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        backdropFilter: 'blur(10px)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 100
-      }}>
+      <div className="bottom-nav">
         {navItems.map((item) => (
           <Link 
             key={item.path} 
             to={item.path}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              color: location.pathname === item.path ? '#ffffff' : '#666666',
-              textDecoration: 'none',
-              fontSize: '12px',
-              padding: '4px',
-              cursor: 'pointer'
-            }}
+            className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
             onClick={handleFeatureClick}
           >
-            <div style={{ fontSize: '18px', marginBottom: '2px' }}>{item.icon}</div>
+            <div className="nav-item-icon">{item.icon}</div>
             <span>{item.text}</span>
           </Link>
         ))}
       </div>
 
-      {/* 扫描二维码模态框 - 使用自定义div实现，与推荐树模态框样式一致 */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        display: scanModalVisible ? 'flex' : 'none',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000
-      }}>
-        <div style={{
-          width: '400px',
-          maxWidth: '90vw',
-          maxHeight: '80vh',
-          backgroundColor: '#000000',
-          borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}>
+      {/* 扫描二维码模态框 */}
+      <div className={`scan-modal ${scanModalVisible ? '' : 'hidden'}`}>
+        <div className="scan-modal-content">
           {/* 模态框头部 */}
-          <div style={{
-            padding: '16px 24px',
-            backgroundColor: '#000000',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <ScanOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-              <div style={{ color: '#ffffff', fontSize: '16px', fontWeight: 'bold' }}>{t('scanQR')}</div>
+          <div className="scan-modal-header">
+            <div className="scan-modal-header-left">
+              <ScanOutlined className="nav-icon" style={{ color: '#1890ff' }} />
+              <div className="scan-modal-title">{t('scanQR')}</div>
             </div>
             <button 
               onClick={handleScanModalClose} 
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: '20px',
-                cursor: 'pointer'
-              }}
+              className="scan-modal-close-btn"
             >
               ×
             </button>
           </div>
           
           {/* 模态框内容 */}
-          <div style={{
-            padding: '24px',
-            backgroundColor: '#000000',
-            overflowY: 'auto',
-            flex: 1
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '16px'
-            }}>
+          <div className="scan-modal-body">
+            <div className="scan-area-container">
               {/* 真实扫描区域 */}
-              <div style={{ 
-                width: '300px', 
-                height: '300px', 
-                border: '2px solid #1890ff', 
-                borderRadius: '8px',
-                overflow: 'hidden',
-                backgroundColor: '#000',
-                position: 'relative',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-              }}>
+              <div className="scan-area">
                 {/* 视频元素 */}
                 <video
                   ref={videoRef}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
+                  className="scan-area-video"
                   autoPlay
                   playsInline
                 />
                 
                 {/* 扫描线动画 */}
-                {isScanning && (
-                  <div style={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    backgroundColor: '#1890ff',
-                    animation: 'scan 2s infinite linear',
-                    opacity: 0.7
-                  }}></div>
-                )}
+                {isScanning && <div className="scan-line"></div>}
                 
                 {/* 扫描框覆盖 */}
-                <div style={{ 
-                  position: 'absolute',
-                  top: '25%',
-                  left: '25%',
-                  right: '25%',
-                  bottom: '25%',
-                  border: '2px solid #1890ff',
-                  pointerEvents: 'none',
-                  borderRadius: '8px'
-                }}></div>
+                <div className="scan-overlay"></div>
                 
                 {/* 扫描提示文字 */}
                 {!isScanning && (
-                  <div style={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    color: '#ffffff', 
-                    fontSize: '14px',
-                    textAlign: 'center',
-                    padding: '20px'
-                  }}>
-                    <div>
-                      <ScanOutlined style={{ fontSize: '48px', marginBottom: '8px', display: 'block', color: '#1890ff' }} />
+                  <div className="scan-initializing">
+                    <div className="scan-initializing-content">
+                      <ScanOutlined className="scan-initializing-icon" />
                       <div>{t('initializingCamera')}</div>
                       <div style={{ fontSize: '12px', marginTop: '4px', color: 'rgba(255, 255, 255, 0.7)' }}>{t('allowCameraAccess')}</div>
                     </div>
                   </div>
                 )}
-                
-                {/* 扫描样式 */}
-                <style>{`
-                  @keyframes scan {
-                    0% { transform: translateY(0); }
-                    100% { transform: translateY(300px); }
-                  }
-                `}</style>
               </div>
               
               {/* 扫描状态提示 */}
               {isScanning && (
-                <div style={{ color: '#1890ff', fontSize: '14px' }}>
+                <div className="scan-status">
                   {t('scanningQR')}
                 </div>
               )}
               
               {/* 手动输入选项 */}
-              <div style={{ textAlign: 'center', width: '100%' }}>
+              <div className="manual-input-option">
                 <Link 
                   to="/buy" 
-                  style={{ color: '#1890ff', textDecoration: 'underline' }}
+                  className="manual-input-link"
                   onClick={handleScanModalClose}
                 >
                   {t('manualInput')}

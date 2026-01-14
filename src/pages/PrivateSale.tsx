@@ -38,15 +38,15 @@ const CARD_STYLE = {
 
 const CARD_MARGIN_BOTTOM = '24px';
 
-// 排版常量 - 与数据页面保持一致
+// 排版常量 - 手机端优化，增大字体大小确保清晰可见
 const FONT_SIZES = {
-  titleLarge: '24px',
-  titleMedium: '20px',
-  titleSmall: '16px',
-  subtitle: '14px',
-  bodyLarge: '16px',
-  bodyMedium: '14px',
-  bodySmall: '12px'
+  titleLarge: '28px',
+  titleMedium: '24px',
+  titleSmall: '20px',
+  subtitle: '18px',
+  bodyLarge: '20px',
+  bodyMedium: '18px',
+  bodySmall: '14px'
 };
 
 const LINE_HEIGHTS = {
