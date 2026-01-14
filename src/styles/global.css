@@ -5,12 +5,67 @@
   box-sizing: border-box;
 }
 
+/* CSS变量定义 - 深色主题 */
+:root {
+  /* 颜色变量 */
+  --primary-color: #1890ff;
+  --danger-color: #ff4d4f;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --info-color: #1890ff;
+  --text-color: #ffffff;
+  --text-light: rgba(255, 255, 255, 0.7);
+  --bg-color: #000000;
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.1);
+  
+  /* 字体变量 */
+  --font-size-xl: 24px;
+  --font-size-large: 20px;
+  --font-size-medium: 14px;
+  --font-size-small: 12px;
+  --font-weight-bold: 500;
+  
+  /* 间距变量 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  
+  /* 边框和圆角 */
+  --border-radius: 8px;
+  --border-width: 1px;
+  --border-style: solid;
+  
+  /* 阴影 */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  /* 过渡效果 */
+  --transition: all 0.3s ease;
+}
+
+/* 模态框专用深色主题样式 - 强制覆盖所有默认样式 */
+#root .ant-modal,
+#root .ant-modal * {
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+#root .ant-modal-content,
+#root .ant-modal-header,
+#root .ant-modal-body {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* 基础样式 - 深色主题 - 与原项目保持一致 */
 body {
   margin: 0;
   padding: 0;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -631,26 +686,40 @@ button.outline {
   justify-content: center !important;
 }
 
-/* Ant Design Modal 深色主题样式 */
+/* Ant Design Modal 深色主题样式 - 完整覆盖 */
 #root .ant-modal {
   background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+#root .ant-modal-wrap {
+  background-color: transparent !important;
+}
+
+#root .ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
 #root .ant-modal-content {
   background-color: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px !important;
+  box-shadow: var(--shadow) !important;
+  background-clip: padding-box !important;
+  overflow: hidden !important;
 }
 
 #root .ant-modal-header {
   background-color: rgba(255, 255, 255, 0.08) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px 8px 0 0 !important;
+  padding: var(--spacing-md) !important;
 }
 
 #root .ant-modal-title {
   color: white !important;
   font-size: 16px !important;
+  font-weight: 500 !important;
 }
 
 #root .ant-modal-close {
@@ -659,6 +728,24 @@ button.outline {
 
 #root .ant-modal-close:hover {
   color: rgba(255, 255, 255, 0.7) !important;
+}
+
+#root .ant-modal-body {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  padding: 0 !important;
+}
+
+#root .ant-modal-footer {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+#root .ant-modal-content::before {
+  display: none !important;
+}
+
+#root .ant-modal-content::after {
+  display: none !important;
 }
 
 /* 响应式设计 - 移动端优先 */

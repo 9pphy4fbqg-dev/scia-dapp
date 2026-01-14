@@ -16,6 +16,7 @@ import {
 
 import { privateSaleAbi } from '../abi/privateSale';
 import { referralCenterAbi } from '../abi/referralCenter';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // 获取合约地址
 const PRIVATE_SALE_CONTRACT_ADDRESS = import.meta.env.REACT_APP_TESTNET_PRIVATE_SALE_CONTRACT_ADDRESS as `0x${string}`;
@@ -96,6 +97,7 @@ const StatisticsPage = () => {
   // 设备类型检测
   const [deviceType, setDeviceType] = useState<string>('unknown');
   const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const { t } = useLanguage();
 
   // 测试数据验证 - 使用当前连接的钱包地址
   const { address: connectedWalletAddress, isConnected } = useAccount();
@@ -170,17 +172,17 @@ const StatisticsPage = () => {
   
   // 计算徽章验证状态
   const calculateBadgeVerification = () => {
-    if (!userBadgeInfo) return { status: 'pending', badgeName: '无' };
+    if (!userBadgeInfo) return { status: 'pending', badgeName: t('no') };
     
     const [badgeLevel] = userBadgeInfo;
     const badgeNameMap: Record<number, string> = {
-      0: '无',
-      1: '会员',
-      2: '市级',
-      3: '省级',
-      4: '国家级'
+      0: t('no'),
+      1: t('member'),
+      2: t('city'),
+      3: t('province'),
+      4: t('national')
     };
-    const badgeName = badgeNameMap[badgeLevel as number] || '无';
+    const badgeName = badgeNameMap[badgeLevel as number] || t('no');
     
     return {
       status: badgeLevel > 0 ? 'success' : 'pending',
@@ -408,7 +410,7 @@ const StatisticsPage = () => {
         lineHeight: LINE_HEIGHTS.title
       }}>
         <BarChartOutlined style={{ marginRight: '10px', fontSize: FONT_SIZES.titleMedium }} />
-        实时数据监控面板
+        {t('statistics')}
       </Title>
 
       {/* 加载状态 */}
@@ -429,7 +431,7 @@ const StatisticsPage = () => {
               justifyContent: 'space-between'
             }} hoverable>
               <Statistic
-                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>总销售额</Text>}
+                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>{t('totalSales')}</Text>}
                 value={poolInfo ? Number(poolInfo[4]) / WEI_TO_USDT * 0.00001 : 0}
                 precision={2}
                 valueStyle={{ color: COLORS.success, fontSize: '28px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}
@@ -450,7 +452,7 @@ const StatisticsPage = () => {
               justifyContent: 'space-between'
             }} hoverable>
               <Statistic
-                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>已售代币</Text>}
+                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>{t('soldTokens')}</Text>}
                 value={poolInfo ? Number(poolInfo[4]) / 10 ** 18 : 0}
                 precision={0}
                 valueStyle={{ color: COLORS.primary, fontSize: '28px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}
@@ -471,7 +473,7 @@ const StatisticsPage = () => {
               justifyContent: 'space-between'
             }} hoverable>
               <Statistic
-                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>剩余代币</Text>}
+                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>{t('remainingTokens')}</Text>}
                 value={poolInfo ? Number(poolInfo[0]) / 10 ** 18 : 0}
                 precision={0}
                 valueStyle={{ color: COLORS.warning, fontSize: '28px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}
@@ -492,7 +494,7 @@ const StatisticsPage = () => {
               justifyContent: 'space-between'
             }} hoverable>
               <Statistic
-                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>参与用户</Text>}
+                title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>{t('participants')}</Text>}
                 value={Number(memberCount) + Number(cityCount) + Number(provinceCount) + Number(nationalCount) || 0}
                 valueStyle={{ color: COLORS.badgeProvince, fontSize: '28px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}
                 suffix={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>人</Text>}
@@ -518,14 +520,14 @@ const StatisticsPage = () => {
               }}
               hoverable
             >
-              <Title level={4} style={{ color: COLORS.badgeMember, margin: '0 0 12px', fontSize: '18px' }}>会员徽章</Title>
+              <Title level={4} style={{ color: COLORS.badgeMember, margin: '0 0 12px', fontSize: '18px' }}>{t('memberBadge')}</Title>
               <Statistic
                 value={Number(memberCount) || 0}
                 valueStyle={{ color: COLORS.badgeMember, fontSize: '36px' }}
-                suffix="人"
+                suffix={t('people')}
               />
               <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '12px', fontSize: '14px' }}>
-                0.11 USDT积分即可获得
+                {t('pointsRequired', { points: '0.11' })}
               </Text>
             </Card>
           </Col>
@@ -542,14 +544,14 @@ const StatisticsPage = () => {
               }}
               hoverable
             >
-              <Title level={4} style={{ color: COLORS.badgeCity, margin: '0 0 12px', fontSize: '18px' }}>市级徽章</Title>
+              <Title level={4} style={{ color: COLORS.badgeCity, margin: '0 0 12px', fontSize: '18px' }}>{t('cityBadge')}</Title>
               <Statistic
                 value={Number(cityCount) || 0}
                 valueStyle={{ color: COLORS.badgeCity, fontSize: '36px' }}
-                suffix="人"
+                suffix={t('people')}
               />
               <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '12px', fontSize: '14px' }}>
-                0.55 USDT积分即可获得
+                {t('pointsRequired', { points: '0.55' })}
               </Text>
             </Card>
           </Col>
@@ -566,14 +568,14 @@ const StatisticsPage = () => {
               }}
               hoverable
             >
-              <Title level={4} style={{ color: COLORS.badgeProvince, margin: '0 0 12px', fontSize: '18px' }}>省级徽章</Title>
+              <Title level={4} style={{ color: COLORS.badgeProvince, margin: '0 0 12px', fontSize: '18px' }}>{t('provinceBadge')}</Title>
               <Statistic
                 value={Number(provinceCount) || 0}
                 valueStyle={{ color: COLORS.badgeProvince, fontSize: '36px' }}
-                suffix="人"
+                suffix={t('people')}
               />
               <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '12px', fontSize: '14px' }}>
-                2.75 USDT积分即可获得
+                {t('pointsRequired', { points: '2.75' })}
               </Text>
             </Card>
           </Col>
@@ -590,14 +592,14 @@ const StatisticsPage = () => {
               }}
               hoverable
             >
-              <Title level={4} style={{ color: COLORS.badgeNational, margin: '0 0 12px', fontSize: '18px' }}>国家级徽章</Title>
+              <Title level={4} style={{ color: COLORS.badgeNational, margin: '0 0 12px', fontSize: '18px' }}>{t('nationalBadge')}</Title>
               <Statistic
                 value={Number(nationalCount) || 0}
                 valueStyle={{ color: COLORS.badgeNational, fontSize: '36px' }}
-                suffix="人"
+                suffix={t('people')}
               />
               <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '12px', fontSize: '14px' }}>
-                13.75 USDT积分即可获得
+                {t('pointsRequired', { points: '13.75' })}
               </Text>
             </Card>
           </Col>
@@ -605,13 +607,13 @@ const StatisticsPage = () => {
 
         {/* 终端一致性与完整性验证 */}
         <Card 
-          title={<span><BarChartOutlined style={{ marginRight: '8px', color: COLORS.primary }} /> 终端验证中心</span>} 
+          title={<span><BarChartOutlined style={{ marginRight: '8px', color: COLORS.primary }} /> {t('terminalVerification')}</span>} 
           style={{ ...CARD_STYLE, marginBottom: CARD_MARGIN_BOTTOM }}
           headStyle={CARD_HEAD_STYLE}
         >
           <Row gutter={16} align="middle" style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: `1px solid ${COLORS.border}` }}>
             <Col xs={24} sm={24} md={8}>
-              <Title level={4} style={{ color: COLORS.textPrimary, margin: 0, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold' }}>销售进度</Title>
+              <Title level={4} style={{ color: COLORS.textPrimary, margin: 0, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold' }}>{t('salesProgress')}</Title>
               <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>
                 {poolInfo ? `${Number(poolInfo[4]) / 10 ** 18} SCIA / ${(Number(poolInfo[0]) + Number(poolInfo[4])) / 10 ** 18} SCIA` : '0 / 0'}
               </Text>
@@ -633,15 +635,15 @@ const StatisticsPage = () => {
                 trailColor="rgba(255, 255, 255, 0.1)"
               />
               <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZES.bodySmall, display: 'block', textAlign: 'center' }}>
-                实时更新中...
+                {t('realTimeUpdate')}
               </Text>
             </Col>
           </Row>
           
-          <Row gutter={16}>
+          <Row gutter={16} align="top">
             {/* 当前设备信息 */}
-            <Col xs={24} sm={12} md={8}>
-              <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>当前设备</Title>
+            <Col xs={24} sm={24} md={12}>
+              <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>{t('currentDevice')}</Title>
               <Row gutter={12}>
                 <Col xs={8} sm={8}>
                   <div style={{ 
@@ -657,42 +659,42 @@ const StatisticsPage = () => {
                     {deviceType === 'mobile' && <MobileOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '8px' }} />}
                     {deviceType === 'tablet' && <TabletOutlined style={{ fontSize: '32px', color: '#faad14', marginBottom: '8px' }} />}
                     <Text style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>
-                      {deviceType === 'desktop' ? '桌面端' : deviceType === 'mobile' ? '移动端' : '平板端'}
+                      {t(deviceType)}
                     </Text>
                   </div>
                 </Col>
                 <Col xs={16} sm={16}>
                   <div style={{ padding: '12px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>
-                    <Text style={{ color: '#ffffff', opacity: 0.7, display: 'block', marginBottom: '8px' }}>视口尺寸</Text>
+                    <Text style={{ color: '#ffffff', opacity: 0.7, display: 'block', marginBottom: '8px' }}>{t('viewportSize')}</Text>
                     <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>
                       {viewportSize.width} × {viewportSize.height}
                     </Text>
                     <br />
-                    <Text style={{ color: '#ffffff', opacity: 0.7, display: 'block', marginTop: '8px' }}>设备类型</Text>
+                    <Text style={{ color: '#ffffff', opacity: 0.7, display: 'block', marginTop: '8px' }}>{t('deviceType')}</Text>
                     <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>
-                      {deviceType === 'desktop' ? '桌面端' : deviceType === 'mobile' ? '移动端' : '平板端'}
+                      {t(deviceType)}
                     </Text>
                   </div>
                 </Col>
               </Row>
 
               {/* 设备兼容性状态 */}
-              <Title level={5} style={{ color: COLORS.textPrimary, marginTop: '24px', marginBottom: '16px', fontSize: '16px' }}>设备兼容性</Title>
+              <Title level={5} style={{ color: COLORS.textPrimary, marginTop: '24px', marginBottom: '16px', fontSize: '16px' }}>{t('deviceCompatibility')}</Title>
               <div style={{ padding: '12px', backgroundColor: `rgba(${COLORS.success}, 0.1)`, borderRadius: '8px' }}>
-                <Row gutter={16}>
+                <Row gutter={16} align="top">
                   <Col xs={12} sm={12}>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: '14px' }}>响应式适配</Text>
-                    <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>✓ 支持</Tag>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: '14px' }}>{t('responsiveDesign')}</Text>
+                    <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>{t('normal')}</Tag>
                   </Col>
                   <Col xs={12} sm={12}>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: '14px' }}>功能完整性</Text>
-                    <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>✓ 完整</Tag>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: '14px' }}>{t('featureIntegrity')}</Text>
+                    <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>{t('normal')}</Tag>
                   </Col>
                 </Row>
               </div>
 
               {/* 钱包信息验证 */}
-              <Title level={5} style={{ color: COLORS.textPrimary, marginTop: '24px', marginBottom: '16px', fontSize: '16px' }}>钱包信息验证</Title>
+              <Title level={5} style={{ color: COLORS.textPrimary, marginTop: '24px', marginBottom: '16px', fontSize: '16px' }}>{t('walletInfoVerification')}</Title>
               <Card 
                 style={{ 
                   ...CARD_STYLE, 
@@ -701,9 +703,9 @@ const StatisticsPage = () => {
                 headStyle={{ padding: '12px', borderBottom: 'none' }}
                 hoverable
               >
-                <Row gutter={16}>
+                <Row gutter={16} align="top">
                   <Col xs={24} sm={12} md={12}>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>钱包地址</Text>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('walletAddress')}</Text>
                     <Text style={{ 
                       color: COLORS.textPrimary, 
                       fontWeight: 'bold', 
@@ -714,19 +716,23 @@ const StatisticsPage = () => {
                       borderRadius: '6px',
                       display: 'block'
                     }}>
-                      {testWalletAddress === '0x0000000000000000000000000000000000000000' ? '未连接钱包' : testWalletAddress}
+                      {testWalletAddress === '0x0000000000000000000000000000000000000000' ? t('notConnected') : testWalletAddress}
                     </Text>
                   </Col>
                   <Col xs={24} sm={12} md={12}>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>链上数据</Text>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('blockchainData')}</Text>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>已获取</Tag>
-                      <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>✓ 正常</Text>
+                      <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>{t('obtained')}</Tag>
+                      <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>
+                        {t('normal')}
+                      </Text>
                     </div>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', marginTop: '12px', fontSize: '14px' }}>数据同步</Text>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', marginTop: '12px', fontSize: '14px' }}>{t('dataSync')}</Text>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>实时</Tag>
-                      <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>5秒更新</Text>
+                      <Tag color="success" style={{ marginRight: '8px', fontSize: '12px' }}>{t('realTime')}</Tag>
+                      <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>
+                        {t('updateInterval', { seconds: '5' })}
+                      </Text>
                     </div>
                   </Col>
                 </Row>
@@ -734,8 +740,8 @@ const StatisticsPage = () => {
             </Col>
 
             {/* 数据完整性与一致性验证 */}
-            <Col xs={24} sm={12} md={16}>
-              <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>三端一致性验证</Title>
+            <Col xs={24} sm={24} md={12}>
+              <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>{t('threeEndConsistency')}</Title>
               <Row gutter={16}>
                 {/* 数据完整性 */}
                 <Col span={24}>
@@ -750,15 +756,15 @@ const StatisticsPage = () => {
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <CheckCircleOutlined style={{ color: isDataIntegrityValid ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                         <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '16px' }}>
-                          数据完整性：{isDataIntegrityValid ? '✓ 完整' : '✗ 不完整'}
+                          {t('dataIntegrity')}：{isDataIntegrityValid ? t('normal') : t('abnormal')}
                         </Text>
                       </div>
                       <Tag color={isDataIntegrityValid ? 'success' : 'error'} style={{ fontSize: '12px' }}>
-                        {isDataIntegrityValid ? '完整' : '不完整'}
+                        {isDataIntegrityValid ? t('yes') : t('no')}
                       </Tag>
                     </div>
                     <Text style={{ color: COLORS.textSecondary, fontSize: '14px', marginTop: '8px', display: 'block' }}>
-                      验证核心数据：剩余私募池代币、已售代币总量
+                      {t('verifyingCoreData')}
                     </Text>
                   </div>
                 </Col>
@@ -776,15 +782,15 @@ const StatisticsPage = () => {
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <BarChartOutlined style={{ color: consistencyResults.isOverallConsistent ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                         <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '16px' }}>
-                          三端一致性：{consistencyResults.isOverallConsistent ? '✓ 一致' : '✗ 不一致'}
+                          {t('overallConsistency')}：{consistencyResults.isOverallConsistent ? t('success') : t('failure')}
                         </Text>
                       </div>
                       <Tag color={consistencyResults.isOverallConsistent ? 'success' : 'error'} style={{ fontSize: '12px' }}>
-                        {consistencyResults.isOverallConsistent ? '一致' : '不一致'}
+                        {consistencyResults.isOverallConsistent ? t('yes') : t('no')}
                       </Tag>
                     </div>
                     <Text style={{ color: COLORS.textSecondary, fontSize: '14px', marginTop: '8px', display: 'block' }}>
-                      验证DAPP数据与链上数据的一致性
+                      {t('verifyingDappChainDataConsistency')}
                     </Text>
                   </div>
                 </Col>
@@ -792,7 +798,7 @@ const StatisticsPage = () => {
                 {/* 私募池信息 */}
                 <Col span={24}>
                   <Card 
-                    title="私募池信息" 
+                    title={t('privatePoolInfo')} 
                     style={{ 
                       ...CARD_STYLE, 
                       marginBottom: '16px'
@@ -802,7 +808,7 @@ const StatisticsPage = () => {
                   >
                     <Row gutter={16}>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>剩余私募池代币</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('remainingPrivateSale')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -816,7 +822,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>剩余奖励池代币</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('remainingReward')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -830,7 +836,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>当前私募池余额</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('currentPrivatePool')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -844,7 +850,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>当前奖励池余额</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('currentRewardPool')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -858,7 +864,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>总售出代币</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('totalSold')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -872,7 +878,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>总分发奖励</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('totalRewards')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -892,7 +898,7 @@ const StatisticsPage = () => {
                 {/* 合约地址信息 */}
                 <Col span={24}>
                   <Card 
-                    title="合约地址" 
+                    title={t('contractAddresses')} 
                     style={{ 
                       ...CARD_STYLE, 
                       marginBottom: '16px'
@@ -900,7 +906,7 @@ const StatisticsPage = () => {
                     headStyle={{ padding: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
                     hoverable
                   >
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px' }}>私募合约：</Text>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px' }}>{t('privateSaleContract')}：</Text>
                     <Text style={{ 
                       color: COLORS.primary, 
                       wordBreak: 'break-all',
@@ -911,7 +917,7 @@ const StatisticsPage = () => {
                       display: 'block',
                       marginBottom: '16px'
                     }}>{PRIVATE_SALE_CONTRACT_ADDRESS}</Text>
-                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '16px', marginBottom: '12px', fontSize: '14px' }}>推荐中心合约：</Text>
+                    <Text style={{ color: COLORS.textSecondary, display: 'block', marginTop: '16px', marginBottom: '12px', fontSize: '14px' }}>{t('referralCenterContract')}：</Text>
                     <Text style={{ 
                       color: COLORS.primary, 
                       wordBreak: 'break-all',
@@ -927,7 +933,7 @@ const StatisticsPage = () => {
                 {/* 合约状态验证 */}
                 <Col span={24}>
                   <Card 
-                    title="合约状态验证" 
+                    title={t('contractStatus')} 
                     style={{ 
                       ...CARD_STYLE, 
                       marginBottom: '16px'
@@ -937,18 +943,18 @@ const StatisticsPage = () => {
                   >
                     <Row gutter={16}>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>销售状态</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('saleStatus')}</Text>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <Tag color={isEnded ? 'error' : (isPaused ? 'warning' : 'success')} style={{ marginRight: '8px', fontSize: '12px' }}>
-                            {isEnded ? '已结束' : (isPaused ? '已暂停' : '进行中')}
+                            {isEnded ? t('ended') : (isPaused ? t('paused') : t('ongoing'))}
                           </Tag>
                           <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>
-                            {isEnded ? '销售已结束' : (isPaused ? '销售已暂停' : '销售进行中')}
+                            {isEnded ? t('saleEnded') : (isPaused ? t('salePaused') : t('saleOngoing'))}
                           </Text>
                         </div>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>已售总量</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('soldTokens')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -962,7 +968,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>总销售额</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('totalSales')}</Text>
                         <Text style={{ 
                           color: COLORS.success, 
                           fontWeight: 'bold',
@@ -982,7 +988,7 @@ const StatisticsPage = () => {
                 {/* 徽章信息验证 */}
                 <Col span={24}>
                   <Card 
-                    title="徽章信息验证" 
+                    title={t('badgeVerification')} 
                     style={{ 
                       ...CARD_STYLE, 
                       marginBottom: '16px'
@@ -992,13 +998,13 @@ const StatisticsPage = () => {
                   >
                     <Row gutter={16}>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>当前徽章</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('currentBadge')}</Text>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <Tag 
                             color={calculateBadgeVerification().status === 'success' ? 'success' : 'pending'} 
                             style={{ marginRight: '8px', fontSize: '12px' }}
                           >
-                            {calculateBadgeVerification().status === 'success' ? '已获得' : '未获得'}
+                            {calculateBadgeVerification().status === 'success' ? t('obtained') : t('pending')}
                           </Tag>
                           <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: '14px' }}>
                             {calculateBadgeVerification().badgeName}
@@ -1006,7 +1012,7 @@ const StatisticsPage = () => {
                         </div>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>当前积分</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('currentPoints')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -1020,7 +1026,7 @@ const StatisticsPage = () => {
                         </Text>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>国家级阈值</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '10px', fontSize: '14px' }}>{t('nationalThreshold')}</Text>
                         <Text style={{ 
                           color: COLORS.textPrimary, 
                           fontWeight: 'bold',
@@ -1040,19 +1046,19 @@ const StatisticsPage = () => {
                 {/* 详细验证结果 */}
                 <Col span={24}>
                   <div style={{ backgroundColor: COLORS.backgroundSecondary, padding: '16px', borderRadius: '8px', marginBottom: '16px', border: `1px solid ${COLORS.border}` }}>
-                    <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>详细验证结果</Title>
+                    <Title level={5} style={{ color: COLORS.textPrimary, marginBottom: '16px', fontSize: '16px' }}>{t('detailedVerification')}</Title>
                     <Row gutter={16}>
                       <Col xs={24} sm={12}>
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                           <CheckCircleOutlined style={{ color: consistencyResults.usdtBalanceConsistency ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                           <Text style={{ color: COLORS.textSecondary }}>
-                            USDT余额一致性：{consistencyResults.usdtBalanceConsistency ? '✓ 一致' : '✗ 不一致'}
+                            {t('usdtBalanceConsistency')}：{consistencyResults.usdtBalanceConsistency ? t('success') : t('failure')}
                           </Text>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                           <CheckCircleOutlined style={{ color: consistencyResults.sciaBalanceConsistency ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                           <Text style={{ color: COLORS.textSecondary }}>
-                            SCIA余额一致性：{consistencyResults.sciaBalanceConsistency ? '✓ 一致' : '✗ 不一致'}
+                            {t('sciaBalanceConsistency')}：{consistencyResults.sciaBalanceConsistency ? t('success') : t('failure')}
                           </Text>
                         </div>
                       </Col>
@@ -1060,13 +1066,13 @@ const StatisticsPage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                           <CheckCircleOutlined style={{ color: consistencyResults.badgeConsistency ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                           <Text style={{ color: COLORS.textSecondary }}>
-                            徽章一致性：{consistencyResults.badgeConsistency ? '✓ 一致' : '✗ 不一致'}
+                            {t('badgeConsistency')}：{consistencyResults.badgeConsistency ? t('success') : t('failure')}
                           </Text>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                           <CheckCircleOutlined style={{ color: consistencyResults.pointsConsistency ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                           <Text style={{ color: COLORS.textSecondary }}>
-                            积分一致性：{consistencyResults.pointsConsistency ? '✓ 一致' : '✗ 不一致'}
+                            {t('pointsConsistency')}：{consistencyResults.pointsConsistency ? t('success') : t('failure')}
                           </Text>
                         </div>
                       </Col>
@@ -1074,7 +1080,7 @@ const StatisticsPage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                           <CheckCircleOutlined style={{ color: consistencyResults.referrerConsistency ? COLORS.success : COLORS.error, marginRight: '8px' }} />
                           <Text style={{ color: COLORS.textSecondary }}>
-                            推荐人一致性：{consistencyResults.referrerConsistency ? '✓ 一致' : '✗ 不一致'}
+                            {t('referrerConsistency')}：{consistencyResults.referrerConsistency ? t('success') : t('failure')}
                           </Text>
                         </div>
                       </Col>
@@ -1087,22 +1093,22 @@ const StatisticsPage = () => {
                   <div style={{ backgroundColor: COLORS.backgroundSecondary, padding: '16px', borderRadius: '8px', border: `1px solid ${COLORS.border}` }}>
                     <Row gutter={16}>
                       <Col xs={24} sm={12}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>验证指标</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>{t('verificationMetrics')}</Text>
                         <ul style={{ color: COLORS.textSecondary, margin: 0, paddingLeft: 20, fontSize: '14px' }}>
-                          <li style={{ marginBottom: '6px' }}>USDT余额一致性（钱包端/合约端/DAPP端）</li>
-                          <li style={{ marginBottom: '6px' }}>SCIA余额一致性（钱包端/合约端/DAPP端）</li>
-                          <li style={{ marginBottom: '6px' }}>徽章等级一致性（DAPP端/合约端）</li>
-                          <li style={{ marginBottom: '6px' }}>积分数据一致性（DAPP端/合约端）</li>
-                          <li>推荐人信息一致性（DAPP端/合约端）</li>
-                        </ul>
+                  <li style={{ marginBottom: '6px' }}>{t('usdtBalanceConsistency')} (Wallet/Contract/DAPP)</li>
+                  <li style={{ marginBottom: '6px' }}>{t('sciaBalanceConsistency')} (Wallet/Contract/DAPP)</li>
+                  <li style={{ marginBottom: '6px' }}>{t('badgeConsistency')} (DAPP/Contract)</li>
+                  <li style={{ marginBottom: '6px' }}>{t('pointsConsistency')} (DAPP/Contract)</li>
+                  <li>{t('referrerConsistency')} (DAPP/Contract)</li>
+                </ul>
                       </Col>
                       <Col xs={24} sm={12}>
-                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>验证信息</Text>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>{t('verificationInfo')}</Text>
                         <ul style={{ color: COLORS.textSecondary, margin: 0, paddingLeft: 20, fontSize: '14px' }}>
-                          <li style={{ marginBottom: '6px' }}>验证频率：30秒/次</li>
-                          <li style={{ marginBottom: '6px' }}>最后验证：{lastVerified.toLocaleString()}</li>
-                          <li style={{ marginBottom: '6px' }}>验证状态：{consistencyResults.isOverallConsistent ? '✓ 正常' : '✗ 异常'}</li>
-                          <li>设备类型：{deviceType === 'desktop' ? '桌面端' : deviceType === 'mobile' ? '移动端' : '平板端'}</li>
+                          <li style={{ marginBottom: '6px' }}>{t('verificationFrequency')}</li>
+                          <li style={{ marginBottom: '6px' }}>{t('lastVerified')}：{lastVerified.toLocaleString()}</li>
+                          <li style={{ marginBottom: '6px' }}>{t('verificationStatus')}：{consistencyResults.isOverallConsistent ? t('normal') : t('abnormal')}</li>
+                          <li>{t('deviceType')}：{t(deviceType)}</li>
                         </ul>
                       </Col>
                     </Row>

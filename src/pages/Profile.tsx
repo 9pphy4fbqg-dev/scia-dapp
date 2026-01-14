@@ -5,9 +5,10 @@ import { referralCenterAbi } from '../abi/referralCenter';
 import { usdtAbi } from '../abi/usdt';
 import { sciaAbi } from '../abi/scia';
 import { privateSaleAbi } from '../abi/privateSale';
-import { Badge, Button, Modal, Tree, Tabs, message } from 'antd';
-import { LoadingOutlined, CopyOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Badge, Button, Tree, Tabs, message, Card, Row, Col, Statistic, Spin, Typography, Progress } from 'antd';
+import { LoadingOutlined, CopyOutlined, DownloadOutlined, UserOutlined, DollarCircleOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // 获取合约地址
 const REFERRAL_CENTER_ADDRESS = import.meta.env.REACT_APP_TESTNET_REFERRAL_CENTER_ADDRESS as `0x${string}`;
@@ -17,8 +18,66 @@ const SCIA_ADDRESS = import.meta.env.REACT_APP_TESTNET_SANCIA_TOKEN_ADDRESS as `
 
 // 常量定义
 const REFRESH_INTERVAL = 30000; // 30秒
-const MAX_DIRECT_REFERRALS = 5; // 最多显示5个直接推荐
 const WEI_TO_USDT = 10 ** 18; // wei到USDT的转换因子
+
+// 色彩主题定义
+const COLORS = {
+  primary: '#1890ff',
+  success: '#52c41a',
+  warning: '#faad14',
+  error: '#ff4d4f',
+  info: '#13c2c2',
+  textPrimary: '#ffffff',
+  textSecondary: 'rgba(255, 255, 255, 0.8)',
+  textTertiary: 'rgba(255, 255, 255, 0.6)',
+  backgroundPrimary: 'rgba(255, 255, 255, 0.05)',
+  backgroundSecondary: 'rgba(255, 255, 255, 0.02)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  badgeMember: '#faad14',
+  badgeCity: '#1890ff',
+  badgeProvince: '#722ed1',
+  badgeNational: '#eb2f96'
+};
+
+// 统一样式常量
+const CARD_STYLE = {
+  backgroundColor: '#000000',
+  borderRadius: '12px',
+  border: `1px solid ${COLORS.border}`,
+  backdropFilter: 'blur(10px)',
+  transition: 'all 0.3s ease-in-out, transform 0.3s ease-out, box-shadow 0.3s ease-out',
+  transform: 'translateY(0)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+  color: COLORS.textPrimary,
+};
+
+const CARD_HEAD_STYLE = {
+  color: COLORS.textPrimary,
+  borderBottom: `1px solid ${COLORS.border}`,
+  fontSize: '16px',
+  fontWeight: 'bold',
+  lineHeight: '1.5'
+};
+
+const CARD_MARGIN_BOTTOM = '24px';
+
+// 排版常量
+const FONT_SIZES = {
+  titleLarge: '24px',
+  titleMedium: '20px',
+  titleSmall: '16px',
+  subtitle: '14px',
+  bodyLarge: '16px',
+  bodyMedium: '14px',
+  bodySmall: '12px'
+};
+
+const LINE_HEIGHTS = {
+  title: '1.3',
+  body: '1.6'
+};
+
+const { Title, Text } = Typography;
 
 // 类型定义
 interface ReferralNode {
@@ -42,6 +101,7 @@ interface ReferralContribution {
 
 const ProfilePage = () => {
   const { address: userAddress, isConnected } = useAccount();
+  const { t } = useLanguage();
   
   // 推荐树模态框状态
   const [treeModalVisible, setTreeModalVisible] = React.useState(false);
@@ -105,7 +165,7 @@ const ProfilePage = () => {
 
   // 解析合约返回的地址
   const parseContractAddress = useCallback((address: string | undefined): string | null => {
-    if (!address || address === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+    if (!address) {
       return null;
     }
 
@@ -114,14 +174,25 @@ const ProfilePage = () => {
       parsedAddress = parsedAddress.slice(2);
     }
     
-    // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
+    // 处理不同长度的地址
+    let fullAddress: string;
     if (parsedAddress.length === 64) {
-      return '0x' + parsedAddress.slice(24); // 取后20字节作为地址
+      // 32字节地址，取后20字节作为以太坊地址
+      fullAddress = '0x' + parsedAddress.slice(24);
     } else if (parsedAddress.length === 40) {
-      return '0x' + parsedAddress;
+      // 20字节地址，直接添加前缀
+      fullAddress = '0x' + parsedAddress;
+    } else {
+      // 无效地址长度
+      return null;
     }
     
-    return null;
+    // 检查是否为零地址
+    if (fullAddress === '0x0000000000000000000000000000000000000000') {
+      return null;
+    }
+    
+    return fullAddress;
   }, []);
 
   // 加载直接推荐列表
@@ -132,8 +203,9 @@ const ProfilePage = () => {
     try {
       const referrals: Array<{ address: string }> = [];
       
-      // 最多获取指定数量的直接推荐
-      for (let index = 0; index < MAX_DIRECT_REFERRALS; index++) {
+      // 获取所有直接推荐
+      let index = 0;
+      while (true) {
         try {
           const referralAddress = await window.ethereum?.request({
             method: 'eth_call',
@@ -156,6 +228,9 @@ const ProfilePage = () => {
           } else {
             break;
           }
+          
+          // 递增索引，获取下一个推荐人
+          index++;
         } catch {
           break;
         }
@@ -473,7 +548,19 @@ const ProfilePage = () => {
   // 格式化USDT金额（从wei转换为USDT）
   const formatUSDT = useCallback((amount: bigint | undefined): string => {
     if (!amount) return '0';
-    return (Number(amount) / WEI_TO_USDT).toFixed(6);
+    const usdtAmount = Number(amount) / WEI_TO_USDT;
+    
+    // 根据数值大小动态调整小数位数
+    if (usdtAmount >= 100) {
+      // 大数值显示2位小数
+      return usdtAmount.toFixed(2);
+    } else if (usdtAmount >= 0.01) {
+      // 中等数值显示4位小数
+      return usdtAmount.toFixed(4);
+    } else {
+      // 小数值显示6位小数
+      return usdtAmount.toFixed(6);
+    }
   }, []);
 
   // 格式化SCIA数量（处理不同类型的输入）
@@ -490,365 +577,706 @@ const ProfilePage = () => {
       numAmount = Number(amount);
     }
     
-    return numAmount.toFixed(6);
+    // 根据数值大小动态调整小数位数
+    if (numAmount >= 1000) {
+      // 大数值显示0位小数
+      return numAmount.toFixed(0);
+    } else if (numAmount >= 1) {
+      // 中等数值显示2位小数
+      return numAmount.toFixed(2);
+    } else {
+      // 小数值显示4位小数
+      return numAmount.toFixed(4);
+    }
   }, []);
 
   // 获取徽章等级名称
   const getBadgeLevelName = useCallback((level: number): string => {
     const levelMap: Record<number, string> = {
-      0: '无',
-      1: '会员',
-      2: '市级',
-      3: '省级',
-      4: '国家级'
+      0: t('no'),
+      1: t('member'),
+      2: t('city'),
+      3: t('province'),
+      4: t('national')
     };
     
-    return levelMap[level] || '无';
+    return levelMap[level] || t('no');
+  }, [t]);
+
+  // 获取徽章颜色
+  const getBadgeColor = useCallback((level: number): string => {
+    const colorMap: Record<number, string> = {
+      0: COLORS.textTertiary,
+      1: COLORS.badgeMember,
+      2: COLORS.badgeCity,
+      3: COLORS.badgeProvince,
+      4: COLORS.badgeNational
+    };
+    
+    return colorMap[level] || COLORS.textTertiary;
   }, []);
 
   return (
-    <div className="page-container profile-page">
-      <section className="profile-section">
-        <h2>个人中心</h2>
-        <div className="profile-info">
-          {/* 个人信息 */}
-          <div className="avatar-container" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            gap: '16px',
-            marginBottom: '16px'
-          }}>
-            <div className="avatar" style={{ 
-              position: 'relative',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              {/* 默认头像，移除自定义头像功能 */}
-              <span style={{ fontSize: '50px' }}>👤</span>
-            </div>
-          </div>
-          <div className="user-info">
-            <p>钱包地址：{isConnected ? userAddress?.slice(0, 10) + '...' + userAddress?.slice(-8) : '未连接'}</p>
-            <p>
-              推荐人：
-              {referrerAddress && referrerAddress !== '0x0000000000000000000000000000000000000000' ? (
-                <span>
-                  {referrerAddress.slice(0, 10) + '...' + referrerAddress.slice(-8)}
-                </span>
-              ) : (
-                <span>无</span>
-              )}
-            </p>
-          </div>
-          <div className="badge-info">
-            <h3>徽章等级</h3>
-            <div className="badge">
-              <span className="badge-icon">🏆</span>
-              <div className="badge-details">
-                {isUserBadgeInfoLoading ? (
-                  <p>加载中...</p>
-                ) : userBadgeInfo ? (
-                  <>
-                    <p>当前徽章：{getBadgeLevelName(userBadgeInfo[0])}</p>
-                    <p>升级到下一等级还需要：{formatPoints(userBadgeInfo[2] - userBadgeInfo[1])}积分</p>
-                  </>
-                ) : (
-                  <p>当前徽章：无</p>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="points-info">
-            <h3>积分与奖励</h3>
-            {(isUserBadgeInfoLoading || isUSDTBalanceLoading || isUSDTAllowanceLoading || isSCIABalanceLoading) ? (
-              <p>加载中...</p>
-            ) : (
-              <>
-                <p>总积分：{userBadgeInfo ? formatPoints(userBadgeInfo[1]) : '0'}</p>
-                <p>USDT余额：{formatUSDT(usdtBalance)}</p>
-                <p>USDT授权额度：{formatUSDT(usdtAllowance)}</p>
-                <p>SCIA余额：{formatSCIA(sciaBalance)}</p>
-              </>
-            )}
-          </div>
-          
-          {/* 推荐统计功能已整合到查询所有推荐树中 */}
+    <div style={{ padding: '20px', backgroundColor: '#000000', minHeight: 'calc(100vh - 180px)' }}>
+      <Title level={2} style={{ 
+        color: COLORS.textPrimary, 
+        textAlign: 'center', 
+        marginBottom: '30px',
+        fontSize: FONT_SIZES.titleLarge,
+        fontWeight: 'bold',
+        lineHeight: LINE_HEIGHTS.title
+      }}>
+        <UserOutlined style={{ marginRight: '10px', fontSize: FONT_SIZES.titleMedium }} />
+        {t('profile')}
+      </Title>
 
-          {/* 分红领取功能 */}
-          <div className="dividend-info">
-            <h3>分红领取</h3>
-            {(isUserBadgeInfoLoading) ? (
-              <p>加载中...</p>
-            ) : (
-              <>
-                <p>可领取分红：{formatDividend(claimableDividends)} USDT</p>
-            <div className="dividend-buttons">
-              {userBadgeInfo && userBadgeInfo[0] >= 1 && (
-                <Button 
-                  type="primary" 
-                  onClick={handleClaimDividend}
-                  loading={isClaimingDividend}
-                  style={{ marginRight: 8 }}
-                  disabled
-                >
-                  领取{getBadgeLevelName(userBadgeInfo[0])}分红
-                </Button>
-              )}
-            </div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="referral-info" style={{ backgroundColor: '#f5f5f5', borderRadius: '8px', padding: '16px', margin: '16px 0' }}>
-          <Tabs defaultActiveKey="promotion">
-            <Tabs.TabPane tab="推广信息" key="promotion">
-              {isCheckingPurchase ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <LoadingOutlined spin style={{ fontSize: 24 }} />
-                  <p style={{ marginTop: 10 }}>正在检查购买记录...</p>
-                </div>
-              ) : hasPurchaseRecord ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0' }}>
-                  <div className="referral-link" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <p style={{ margin: 0 }}>推广链接：</p>
-                    <input
-                      type="text"
-                      value={`https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`}
-                      readOnly
-                      style={{
-                        flex: 1,
-                        minWidth: '200px',
-                        padding: '8px',
-                        borderRadius: '4px',
-                        border: '1px solid #d9d9d9',
-                        backgroundColor: '#fff',
-                        color: '#000',
-                      }}
-                    />
-                    <Button
-                      icon={<CopyOutlined />}
-                      onClick={() => {
-                        const referralLink = `https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
-                        navigator.clipboard.writeText(referralLink)
-                          .then(() => {
-                            message.success('复制成功！');
-                          })
-                          .catch(() => {
-                            message.error('复制失败，请手动复制');
-                          });
-                      }}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      复制链接
-                    </Button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
-                    <p style={{ margin: 0 }}>推广二维码：</p>
-                    <div className="qr-code" style={{ 
-                      padding: '10px', 
-                      backgroundColor: '#fff', 
-                      borderRadius: '8px',
-                      border: '1px solid #d9d9d9',
+      <Spin
+        spinning={false}
+        indicator={<LoadingOutlined style={{ fontSize: FONT_SIZES.titleLarge, color: COLORS.primary }} spin />}
+      >
+        {/* 个人信息卡片 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: CARD_MARGIN_BOTTOM }}>
+          <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+            <Card 
+              title={t('basicInfo')} 
+              style={{ 
+                ...CARD_STYLE, 
+                marginBottom: CARD_MARGIN_BOTTOM,
+                backgroundColor: COLORS.backgroundPrimary,
+              }}
+              headStyle={CARD_HEAD_STYLE}
+              hoverable
+            >
+              <Row gutter={16} align="middle">
+                <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: '16px',
+                    padding: '20px 0'
+                  }}>
+                    <div style={{ 
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      backgroundColor: COLORS.backgroundSecondary,
                       display: 'flex',
-                      flexDirection: 'column',
+                      justifyContent: 'center',
                       alignItems: 'center',
-                      gap: '8px',
-                      alignSelf: 'flex-start'
+                      fontSize: '50px'
                     }}>
-                      <QRCodeSVG 
-                        value={`https://scia-dapp.com?ref=${userAddress}`} 
-                        size={140} 
-                        level="H" 
-                        includeMargin={false} 
-                        bgColor="#ffffff" 
-                        fgColor="#000000" 
-                      />
-                      <Button
-                        size="small"
-                        icon={<DownloadOutlined />}
-                        onClick={() => {
-                          // 生成真实的二维码并下载
-                          const qrValue = `https://scia-dapp.com?ref=${userAddress}`;
-                            
-                          // 创建一个临时容器来渲染二维码
-                          const tempContainer = document.createElement('div');
-                          document.body.appendChild(tempContainer);
-                            
-                          // 使用ReactDOMServer将QRCodeSVG组件渲染为HTML字符串
-                          const { renderToString } = require('react-dom/server');
-                          const qrCodeHtml = renderToString(
-                            React.createElement(QRCodeSVG, {
-                              value: qrValue,
-                              size: 400, // 生成更大的二维码，提高清晰度
-                              level: 'H',
-                              includeMargin: false,
-                              bgColor: '#ffffff',
-                              fgColor: '#000000'
-                            })
-                          );
-                            
-                          // 将HTML字符串转换为完整的SVG
-                          const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-${qrCodeHtml}`;
-                            
-                          // 创建Blob对象
-                          const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-                            
-                          // 创建下载链接
-                          const downloadLink = document.createElement('a');
-                          downloadLink.href = URL.createObjectURL(blob);
-                          downloadLink.download = `SCIA推广二维码_${userAddress?.slice(0, 8)}.svg`;
-                          downloadLink.click();
-                            
-                          // 清理临时容器
-                          document.body.removeChild(tempContainer);
-                        }}
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        下载二维码
-                      </Button>
+                      👤
+                    </div>
+                    <Text style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyLarge, fontWeight: 'bold' }}>
+                      {t('profile')}
+                    </Text>
+                  </div>
+                </Col>
+                <Col xs={24} sm={24} md={18} lg={18} xl={18}>
+                  <Row gutter={16}>
+                    <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                      <div style={{ padding: '12px', backgroundColor: COLORS.backgroundSecondary, borderRadius: '8px', height: '100%' }}>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium }}>{t('walletAddress')}</Text>
+                      <Text style={{ 
+                        color: COLORS.textPrimary, 
+                        fontWeight: 'bold', 
+                        wordBreak: 'break-all',
+                        fontSize: FONT_SIZES.bodyMedium,
+                        backgroundColor: COLORS.backgroundPrimary,
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        display: 'block'
+                      }}>
+                        {isConnected ? userAddress : t('notConnected')}
+                      </Text>
+                      </div>
+                    </Col>
+                    <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                      <div style={{ padding: '12px', backgroundColor: COLORS.backgroundSecondary, borderRadius: '8px', height: '100%' }}>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium }}>{t('referrer')}</Text>
+                      <Text style={{ 
+                        color: COLORS.textPrimary, 
+                        fontWeight: 'bold',
+                        fontSize: FONT_SIZES.bodyMedium,
+                        backgroundColor: COLORS.backgroundPrimary,
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        display: 'block'
+                      }}>
+                        {referrerAddress && referrerAddress !== '0x0000000000000000000000000000000000000000' ? (
+                          referrerAddress.slice(0, 10) + '...' + referrerAddress.slice(-8)
+                        ) : (
+                          t('no')
+                        )}
+                      </Text>
+                      </div>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* 徽章与积分卡片 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: CARD_MARGIN_BOTTOM }}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Card 
+              title={t('badgeLevel')} 
+              style={{ 
+                ...CARD_STYLE, 
+                marginBottom: CARD_MARGIN_BOTTOM,
+                backgroundColor: COLORS.backgroundPrimary,
+              }}
+              headStyle={CARD_HEAD_STYLE}
+              hoverable
+            >
+              <Row gutter={16} align="middle">
+                <Col xs={24} sm={8} md={8} lg={8} xl={8}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '20px 0'
+                  }}>
+                    <div style={{ 
+                      fontSize: '60px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}>
+                      🏆
                     </div>
                   </div>
-                  <div className="direct-referrals" style={{ marginTop: '8px' }}>
-                    <h4 style={{ margin: '0 0 8px 0' }}>直接推荐（最近5人）</h4>
+                </Col>
+                <Col xs={24} sm={16} md={16} lg={16} xl={16}>
+                  {isUserBadgeInfoLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+                      <LoadingOutlined spin style={{ fontSize: 24, color: COLORS.primary }} />
+                    </div>
+                  ) : userBadgeInfo ? (
+                    <>
+                      <div style={{ marginBottom: '16px' }}>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodyMedium }}>{t('currentBadge')}</Text>
+                        <Text style={{ 
+                          color: getBadgeColor(userBadgeInfo[0]), 
+                          fontWeight: 'bold',
+                          fontSize: FONT_SIZES.titleSmall,
+                          backgroundColor: `${getBadgeColor(userBadgeInfo[0])}20`,
+                          padding: '8px 16px',
+                          borderRadius: '20px',
+                          display: 'inline-block'
+                        }}>
+                          {getBadgeLevelName(userBadgeInfo[0])}
+                        </Text>
+                      </div>
+                      <div>
+                        <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium }}>{t('upgradeProgress')}</Text>
+                        <Progress 
+                          percent={Math.min(Math.round((Number(userBadgeInfo[1]) / Number(userBadgeInfo[2])) * 100), 100)} 
+                          strokeColor={getBadgeColor(userBadgeInfo[0] + 1)}
+                          style={{ marginBottom: '8px' }}
+                          strokeWidth={8}
+                          trailColor={COLORS.backgroundSecondary}
+                        />
+                        <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZES.bodySmall, display: 'block', textAlign: 'right' }}>
+                          {t('pointsNeeded', { points: formatPoints(userBadgeInfo[2] - userBadgeInfo[1]) })}
+                        </Text>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: '20px 0', textAlign: 'center' }}>
+                      <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>当前徽章：无</Text>
+                    </div>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Card 
+              title={t('pointsBalance')} 
+              style={{ 
+                ...CARD_STYLE, 
+                marginBottom: CARD_MARGIN_BOTTOM,
+                backgroundColor: COLORS.backgroundPrimary,
+              }}
+              headStyle={CARD_HEAD_STYLE}
+              hoverable
+            >
+              {(isUserBadgeInfoLoading || isUSDTBalanceLoading || isUSDTAllowanceLoading || isSCIABalanceLoading) ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+                  <LoadingOutlined spin style={{ fontSize: 24, color: COLORS.primary }} />
+                </div>
+              ) : (
+                <Row gutter={16}>
+                  <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                    <div style={{ padding: '12px 0' }}>
+                      <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodySmall }}>{t('totalPoints')}</Text>
+                      <Text style={{ color: COLORS.textPrimary, fontWeight: 'bold', fontSize: FONT_SIZES.titleMedium }}>
+                        {userBadgeInfo ? formatPoints(userBadgeInfo[1]) : '0'}
+                      </Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                    <div style={{ padding: '12px 0' }}>
+                      <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodySmall }}>{t('usdtBalance')}</Text>
+                      <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: FONT_SIZES.titleMedium }}>
+                        {formatUSDT(usdtBalance)}
+                      </Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                    <div style={{ padding: '12px 0' }}>
+                      <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodySmall }}>{t('usdtAllowance')}</Text>
+                      <Text style={{ color: COLORS.info, fontWeight: 'bold', fontSize: FONT_SIZES.titleMedium }}>
+                        {formatUSDT(usdtAllowance)}
+                      </Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                    <div style={{ padding: '12px 0' }}>
+                      <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodySmall }}>{t('sciaBalance')}</Text>
+                      <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: FONT_SIZES.titleMedium }}>
+                        {formatSCIA(sciaBalance)}
+                      </Text>
+                    </div>
+                  </Col>
+                </Row>
+              )}
+            </Card>
+          </Col>
+        </Row>
+
+        {/* 分红领取卡片 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: CARD_MARGIN_BOTTOM }}>
+          <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+            <Card 
+              title={t('dividendClaim')} 
+              style={{ 
+                ...CARD_STYLE, 
+                marginBottom: CARD_MARGIN_BOTTOM,
+                backgroundColor: COLORS.backgroundPrimary,
+              }}
+              headStyle={CARD_HEAD_STYLE}
+              hoverable
+            >
+              {isUserBadgeInfoLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+                  <LoadingOutlined spin style={{ fontSize: 24, color: COLORS.primary }} />
+                </div>
+              ) : (
+                <Row gutter={16} align="middle">
+                  <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+                    <div style={{ padding: '12px 0' }}>
+                      <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '4px', fontSize: FONT_SIZES.bodyMedium }}>{t('claimableDividend')}</Text>
+                      <Text style={{ color: COLORS.warning, fontWeight: 'bold', fontSize: FONT_SIZES.titleLarge }}>
+                        {formatDividend(claimableDividends)} USDT
+                      </Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={24} md={16} lg={16} xl={16}>
+                    <div className="dividend-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
+                      {userBadgeInfo && userBadgeInfo[0] >= 1 ? (
+                        <Button 
+                          type="primary" 
+                          onClick={handleClaimDividend}
+                          loading={isClaimingDividend}
+                          disabled
+                        >
+                          {t('claimDividend', { badge: getBadgeLevelName(userBadgeInfo[0]) })}
+                        </Button>
+                      ) : (
+                        <Button 
+                          type="primary" 
+                          disabled
+                        >
+                          {t('noDividendPermission')}
+                        </Button>
+                      )}
+                    </div>
+                  </Col>
+                </Row>
+              )}
+            </Card>
+          </Col>
+        </Row>
+
+        {/* 推广信息卡片 */}
+        <Card 
+          title={t('promotionInfo')} 
+          style={{ 
+            ...CARD_STYLE, 
+            marginBottom: CARD_MARGIN_BOTTOM,
+            backgroundColor: COLORS.backgroundPrimary,
+          }}
+          headStyle={CARD_HEAD_STYLE}
+          hoverable
+        >
+          <Tabs defaultActiveKey="promotion">
+            <Tabs.TabPane tab={t('promotionInfo')} key="promotion">
+              {isCheckingPurchase ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <LoadingOutlined spin style={{ fontSize: 24, color: COLORS.primary }} />
+                  <p style={{ marginTop: 10, color: COLORS.textSecondary }}>Checking purchase records...</p>
+                </div>
+              ) : hasPurchaseRecord ? (
+                <>
+                  {/* 推广链接与二维码 */}
+                  <Card 
+                    title={t('promotionLinkQR')} 
+                    style={{ 
+                      ...CARD_STYLE, 
+                      marginBottom: CARD_MARGIN_BOTTOM,
+                      backgroundColor: COLORS.backgroundPrimary,
+                    }}
+                    headStyle={CARD_HEAD_STYLE}
+                    hoverable
+                  >
+                    <Row gutter={[16, 16]} align="top">
+                      {/* 左侧：二维码 - 调整宽度，只占据必要空间 */}
+                      <Col xs={24} sm={10} md={8} lg={8} xl={8}>
+                        <div className="qr-code" style={{ 
+                          padding: '16px', 
+                          backgroundColor: COLORS.backgroundSecondary, 
+                          borderRadius: '8px',
+                          border: `1px solid ${COLORS.border}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '16px',
+                          marginBottom: '12px',
+                          width: '100%',
+                          maxWidth: '250px',
+                          minHeight: '250px',
+                          justifyContent: 'center',
+                          aspectRatio: '1/1'
+                        }}>
+                          <QRCodeSVG 
+                            value={`https://scia-dapp.com?ref=${userAddress}`} 
+                            size={200} 
+                            level="H" 
+                            includeMargin={false} 
+                            bgColor={COLORS.backgroundSecondary} 
+                            fgColor={COLORS.textPrimary} 
+                            style={{ width: '100%', height: 'auto', maxWidth: '200px', maxHeight: '200px' }}
+                          />
+                        </div>
+                        {/* 下载按钮移到二维码下方，独立成行 */}
+                        <Button
+                          size="middle"
+                          icon={<DownloadOutlined />}
+                          onClick={() => {
+                            // 生成真实的二维码并下载
+                            const qrValue = `https://scia-dapp.com?ref=${userAddress}`;
+                               
+                            // 创建一个临时容器来渲染二维码
+                            const tempContainer = document.createElement('div');
+                            document.body.appendChild(tempContainer);
+                               
+                            // 使用ReactDOMServer将QRCodeSVG组件渲染为HTML字符串
+                            const { renderToString } = require('react-dom/server');
+                            const qrCodeHtml = renderToString(
+                              React.createElement(QRCodeSVG, {
+                                value: qrValue,
+                                size: 400, // 生成更大的二维码，提高清晰度
+                                level: 'H',
+                                includeMargin: false,
+                                bgColor: COLORS.backgroundSecondary,
+                                fgColor: COLORS.textPrimary
+                              })
+                            );
+                               
+                            // 将HTML字符串转换为完整的SVG
+                            const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+${qrCodeHtml}`;
+                               
+                            // 创建Blob对象
+                            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                               
+                            // 创建下载链接
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = URL.createObjectURL(blob);
+                            downloadLink.download = `SCIA_Promotion_QR_${userAddress?.slice(0, 8)}.svg`;
+                            downloadLink.click();
+                               
+                            // 清理临时容器
+                            document.body.removeChild(tempContainer);
+                          }}
+                          style={{ width: '100%', maxWidth: '250px' }}
+                        >
+                          {t('downloadQR')}
+                        </Button>
+                      </Col>
+                      
+                      {/* 右侧：推广链接和使用说明 - 扩展宽度，填充剩余空间 */}
+                      <Col xs={24} sm={14} md={16} lg={16} xl={16}>
+                        {/* 推广链接 - 增大文字，减少留白 */}
+                        <div className="referral-link" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: '12px',
+                          marginBottom: '16px',
+                          padding: '16px',
+                          backgroundColor: COLORS.backgroundSecondary,
+                          borderRadius: '8px',
+                          border: `1px solid ${COLORS.border}`
+                        }}>
+                          <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyLarge, marginBottom: '8px' }}>{t('promotionLink')}</Text>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <input
+                              type="text"
+                              value={`https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`}
+                              readOnly
+                              style={{
+                                flex: 1,
+                                minWidth: '200px',
+                                padding: '10px 14px',
+                                borderRadius: '4px',
+                                border: `1px solid ${COLORS.border}`,
+                                backgroundColor: COLORS.backgroundPrimary,
+                                color: COLORS.textPrimary,
+                                fontSize: FONT_SIZES.bodyMedium
+                              }}
+                            />
+                            <Button
+                              size="middle"
+                              icon={<CopyOutlined />}
+                              onClick={() => {
+                                const referralLink = `https://scia-dapp.com?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
+                                navigator.clipboard.writeText(referralLink)
+                                  .then(() => {
+                                    message.success(t('copySuccess'));
+                                  })
+                                  .catch(() => {
+                                    message.error(t('copyFailed'));
+                                  });
+                              }}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              {t('copy')}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* 使用说明 - 增大文字，减少留白 */}
+                        <div style={{ 
+                          padding: '16px', 
+                          backgroundColor: COLORS.backgroundSecondary, 
+                          borderRadius: '8px',
+                          border: `1px solid ${COLORS.border}`
+                        }}>
+                          <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '12px', fontSize: FONT_SIZES.bodyLarge }}>{t('usageInstructions')}</Text>
+                          <ul style={{ color: COLORS.textPrimary, margin: 0, paddingLeft: 20, fontSize: FONT_SIZES.bodyMedium, lineHeight: 1.6 }}>
+                            <li style={{ marginBottom: '8px' }}>{t('promotionSteps')}</li>
+                            <li style={{ marginBottom: '8px' }}>{t('referralReward')}</li>
+                            <li style={{ marginBottom: '8px' }}>{t('autoCalculation')}</li>
+                            <li>{t('viewReferralTree')}</li>
+                          </ul>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+
+                  {/* 直接推荐记录 */}
+                  <Card 
+                    title={t('directReferrals')} 
+                    style={{ 
+                      ...CARD_STYLE, 
+                      marginBottom: CARD_MARGIN_BOTTOM,
+                      backgroundColor: COLORS.backgroundPrimary,
+                    }}
+                    headStyle={CARD_HEAD_STYLE}
+                    hoverable
+                    size="small"
+                  >
                     {isLoadingReferrals ? (
-                      <p>加载中...</p>
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+                        <LoadingOutlined spin style={{ fontSize: 24, color: COLORS.primary }} />
+                      </div>
                     ) : directReferrals.length > 0 ? (
-                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                      <ul style={{ color: COLORS.textPrimary, margin: 0, paddingLeft: 24, fontSize: FONT_SIZES.bodyMedium }}>
                         {directReferrals.map((referral, index) => (
-                          <li key={index}>
-                            <Badge status="success" /> {referral.address.slice(0, 10) + '...' + referral.address.slice(-8)}
+                          <li key={index} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Badge status="success" style={{ backgroundColor: COLORS.success }} />
+                            <Text style={{ color: COLORS.textPrimary, wordBreak: 'break-all' }}>{referral.address.slice(0, 10) + '...' + referral.address.slice(-8)}</Text>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p>暂无推荐记录</p>
+                      <div style={{ textAlign: 'center', padding: '20px 0', color: COLORS.textTertiary }}>
+                      <Text style={{ fontSize: FONT_SIZES.bodyMedium }}>{t('noReferrals')}</Text>
+                    </div>
                     )}
-                  </div>
+                  </Card>
+
+                  {/* 查询推荐树按钮 */}
                   <Button 
                     type="primary" 
                     className="view-all-referrals-btn"
                     onClick={handleViewReferralTree}
                     loading={isLoadingTree}
+                    block
                   >
-                    查询所有推荐树（包含推荐统计）
+                    {t('viewAllReferrals')}
                   </Button>
-                </div>
+                </>
               ) : (
                 <div style={{ 
                   textAlign: 'center', 
-                  padding: '20px', 
-                  backgroundColor: 'rgba(255, 173, 173, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid #ff4d4f'
+                  padding: '32px', 
+                  backgroundColor: 'rgba(255, 77, 79, 0.1)',
+                  borderRadius: '12px',
+                  border: `1px solid ${COLORS.error}33`
                 }}>
-                  <h3 style={{ color: '#ff4d4f', marginBottom: '16px' }}>暂无推广权限</h3>
-                  <p>根据合约规则，您需要先购买SCIA代币才能获取专属推广链接和二维码</p>
+                  <h3 style={{ color: COLORS.error, marginBottom: '16px', fontSize: FONT_SIZES.titleMedium }}>{t('noPromotionPermission')}</h3>
+                  <p style={{ color: COLORS.textSecondary, marginBottom: '24px', fontSize: FONT_SIZES.bodyMedium }}>{t('buyToGetLink')}</p>
                   <Button 
                     type="primary" 
-                    style={{ marginTop: '16px' }}
                     onClick={() => window.location.href = '/buy'}
                   >
-                    立即购买
+                    {t('buyNow')}
                   </Button>
                 </div>
               )}
             </Tabs.TabPane>
           </Tabs>
-        </div>
+        </Card>
+      </Spin>
 
-          {/* 推荐树模态框 */}
-          <Modal
-            title="推荐树"
-            open={treeModalVisible}
-            onCancel={() => setTreeModalVisible(false)}
-            footer={null}
-            width={800}
-          >
-            {isLoadingTree ? (
-              <div style={{ textAlign: 'center', padding: '50px' }}>
-                <LoadingOutlined spin style={{ fontSize: 48 }} />
-                <p style={{ marginTop: 20 }}>正在加载推荐树...</p>
-              </div>
-            ) : (
-              <>
-                {/* 推荐统计信息 */}
-                <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-                  <h4>推荐统计</h4>
-                  <div style={{ display: 'flex', gap: '32px' }}>
-                    <div>
-                      <p>直接推荐人数：{referralStats.directCount}</p>
-                    </div>
-                    <div>
-                      <p>总推荐人数：{referralStats.totalCount}</p>
-                    </div>
-                    <div>
-                      <p>总USDT奖励：{formatUSDT(BigInt(referralStats.totalUSDTReward))}</p>
-                    </div>
-                    <div>
-                      <p>总SCIA奖励：{formatSCIA(Number(referralStats.totalSCIAReward) / (10 ** 18))}</p>
-                    </div>
-                  </div>
+      {/* 推荐树模态框 */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', display: treeModalVisible ? 'flex' : 'none', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+        <div style={{ width: '1000px', maxWidth: '90vw', maxHeight: '80vh', backgroundColor: '#000000', borderRadius: '12px', border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* 模态框头部 */}
+          <div style={{ padding: '16px 24px', backgroundColor: '#000000', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <UserOutlined style={{ marginRight: '8px', color: COLORS.primary }} />
+              <Text style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.titleMedium, fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>{t('referralTree')}</Text>
+            </div>
+            <button onClick={() => setTreeModalVisible(false)} style={{ background: 'none', border: 'none', color: COLORS.textPrimary, fontSize: FONT_SIZES.titleMedium, cursor: 'pointer' }}>×</button>
+          </div>
+          {/* 模态框内容 */}
+          <div style={{ padding: '24px', backgroundColor: '#000000', overflowY: 'auto', flex: 1 }}>
+        {isLoadingTree ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <LoadingOutlined spin style={{ fontSize: 48, color: COLORS.primary }} />
+            <p style={{ marginTop: 20, color: COLORS.textSecondary }}>{t('loadingTree')}</p>
+          </div>
+        ) : (
+          <>
+            {/* 推荐统计信息 */}
+            <div style={{ backgroundColor: '#000000', borderRadius: '12px', border: `1px solid ${COLORS.border}`, marginBottom: CARD_MARGIN_BOTTOM, padding: '16px' }}>
+              <h3 style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold', marginBottom: '16px' }}>{t('referralStats')}</h3>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+                  <Statistic
+                    title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>{t('directReferrals')}</Text>}
+                    value={referralStats.directCount}
+                    valueStyle={{ color: COLORS.success, fontSize: FONT_SIZES.titleLarge, fontWeight: 'bold' }}
+                    prefix={<UserOutlined style={{ color: COLORS.success }} />}
+                  />
+                </Col>
+                <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+                  <Statistic
+                    title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>{t('totalReferrals')}</Text>}
+                    value={referralStats.totalCount}
+                    valueStyle={{ color: COLORS.primary, fontSize: FONT_SIZES.titleLarge, fontWeight: 'bold' }}
+                    prefix={<UserOutlined style={{ color: COLORS.primary }} />}
+                  />
+                </Col>
+                <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+                  <Statistic
+                    title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>{t('totalUSDT')}</Text>}
+                    value={formatUSDT(BigInt(referralStats.totalUSDTReward))}
+                    valueStyle={{ color: COLORS.warning, fontSize: FONT_SIZES.titleLarge, fontWeight: 'bold' }}
+                    prefix={<DollarCircleOutlined style={{ color: COLORS.warning }} />}
+                    suffix={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>USDT</Text>}
+                  />
+                </Col>
+                <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+                  <Statistic
+                    title={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>{t('totalSCIA')}</Text>}
+                    value={formatSCIA(Number(referralStats.totalSCIAReward) / (10 ** 18))}
+                    valueStyle={{ color: COLORS.info, fontSize: FONT_SIZES.titleLarge, fontWeight: 'bold' }}
+                    prefix={<DollarCircleOutlined style={{ color: COLORS.info }} />}
+                    suffix={<Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium }}>SCIA</Text>}
+                  />
+                </Col>
+              </Row>
+            </div>
+            
+            {/* 推荐人贡献列表 */}
+            <div style={{ backgroundColor: '#000000', borderRadius: '12px', border: `1px solid ${COLORS.border}`, marginBottom: CARD_MARGIN_BOTTOM, padding: '16px' }}>
+              <h3 style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold', marginBottom: '16px' }}>{t('purchaseDetails')}</h3>
+              {referralContributions.length > 0 ? (
+                <>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: COLORS.backgroundSecondary }}>
+                        <th style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium, fontWeight: 'bold' }}>{t('referredUser')}</th>
+                        <th style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium, fontWeight: 'bold' }}>{t('purchaseAmount')}</th>
+                        <th style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium, fontWeight: 'bold' }}>{t('purchaseValue')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {referralContributions.map((contribution, index) => (
+                        <tr key={index} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                          <td style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium }}>
+                            {contribution.address.slice(0, 10) + '...' + contribution.address.slice(-8)}
+                          </td>
+                          <td style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium }}>
+                            {formatSCIA(contribution.totalSCIA)}
+                          </td>
+                          <td style={{ padding: '12px', border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyMedium }}>
+                            {formatUSDT(BigInt(contribution.totalUSDT))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZES.bodySmall, display: 'block', marginTop: '16px' }}>
+                    {t('purchaseNote')}
+                  </Text>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: COLORS.textTertiary }}>
+                  <Text style={{ fontSize: FONT_SIZES.bodyMedium }}>{t('noPurchaseRecords')}</Text>
                 </div>
-                
-                {/* 推荐人贡献列表 */}
-                <div style={{ marginBottom: '20px' }}>
-                  <h4>被推荐人购买明细</h4>
-                  {referralContributions.length > 0 ? (
-                    <>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ backgroundColor: '#f5f5f5' }}>
-                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>被推荐人</th>
-                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>购买SCIA数量</th>
-                            <th style={{ padding: '8px', border: '1px solid #ddd' }}>购买USDT金额</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {referralContributions.map((contribution, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                                {contribution.address.slice(0, 10)}...{contribution.address.slice(-8)}
-                              </td>
-                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                                {formatSCIA(contribution.totalSCIA)}
-                              </td>
-                              <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                                {formatUSDT(BigInt(contribution.totalUSDT))}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                        注：以上为被推荐人的真实购买数据，推荐奖励根据合约规则（USDT 5% + SCIA 5%）自动计算
-                      </p>
-                    </>
-                  ) : (
-                    <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
-                      暂无被推荐人购买记录
-                    </p>
-                  )}
-                </div>
-                
-                {/* 推荐树展示 */}
-                {treeData.length > 0 ? (
+              )}
+            </div>
+            
+            {/* 推荐树展示 */}
+            <div style={{ backgroundColor: '#000000', borderRadius: '12px', border: `1px solid ${COLORS.border}`, marginBottom: CARD_MARGIN_BOTTOM, padding: '16px' }}>
+              <h3 style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.titleSmall, fontWeight: 'bold', marginBottom: '16px' }}>{t('referralStructure')}</h3>
+              {treeData.length > 0 ? (
+                <div style={{ backgroundColor: '#000000', borderRadius: '8px', padding: '16px', border: `1px solid ${COLORS.border}` }}>
                   <Tree
                     treeData={treeData}
                     defaultExpandAll
                     showIcon
+                    style={{
+                      color: COLORS.textPrimary,
+                      backgroundColor: '#000000',
+                    } as React.CSSProperties}
+                    switcherIcon={<div style={{ color: COLORS.primary }}>▶</div>}
+                    titleRender={(node) => {
+                      return <span style={{ color: COLORS.textPrimary }}>{node.title}</span>;
+                    }}
                   />
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '50px' }}>
-                    <p>暂无推荐关系</p>
-                  </div>
-                )}
-              </>
-            )}
-          </Modal>
-      </section>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '50px 0', color: COLORS.textTertiary }}>
+                <Text style={{ fontSize: FONT_SIZES.bodyMedium }}>{t('noReferralRelationship')}</Text>
+              </div>
+              )}
+            </div>
+          </>
+        )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

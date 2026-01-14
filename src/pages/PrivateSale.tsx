@@ -1,9 +1,58 @@
 import React, { useState } from 'react';
-import { Form, InputNumber, Input, Button, Card, Divider, Typography, message } from 'antd';
+import { Form, InputNumber, Input, Button, Card, Divider, Typography, message, Row, Col, Tag, Spin } from 'antd';
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
-import { globalDesign, globalStyles } from '../constants/globalDesign';
 import { privateSaleAbi } from '../abi/privateSale';
 import { usdtAbi } from '../abi/usdt';
+import { ShoppingCartOutlined, LoadingOutlined } from '@ant-design/icons';
+import { useLanguage } from '../contexts/LanguageContext';
+
+// 色彩主题定义 - 与数据页面保持一致
+const COLORS = {
+  primary: '#1890ff',
+  success: '#52c41a',
+  warning: '#faad14',
+  error: '#ff4d4f',
+  info: '#13c2c2',
+  textPrimary: '#ffffff',
+  textSecondary: 'rgba(255, 255, 255, 0.8)',
+  textTertiary: 'rgba(255, 255, 255, 0.6)',
+  backgroundPrimary: 'rgba(255, 255, 255, 0.05)',
+  backgroundSecondary: 'rgba(255, 255, 255, 0.02)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  badgeMember: '#faad14',
+  badgeCity: '#1890ff',
+  badgeProvince: '#722ed1',
+  badgeNational: '#eb2f96'
+};
+
+// 统一样式常量 - 与数据页面保持一致
+const CARD_STYLE = {
+  backgroundColor: COLORS.backgroundPrimary,
+  borderRadius: '12px',
+  border: `1px solid ${COLORS.border}`,
+  backdropFilter: 'blur(10px)',
+  transition: 'all 0.3s ease-in-out, transform 0.3s ease-out, box-shadow 0.3s ease-out',
+  transform: 'translateY(0)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+};
+
+const CARD_MARGIN_BOTTOM = '24px';
+
+// 排版常量 - 与数据页面保持一致
+const FONT_SIZES = {
+  titleLarge: '24px',
+  titleMedium: '20px',
+  titleSmall: '16px',
+  subtitle: '14px',
+  bodyLarge: '16px',
+  bodyMedium: '14px',
+  bodySmall: '12px'
+};
+
+const LINE_HEIGHTS = {
+  title: '1.3',
+  body: '1.6'
+};
 
 const { Title, Text } = Typography;
 
@@ -12,6 +61,7 @@ const PRIVATE_SALE_ADDRESS = import.meta.env.REACT_APP_TESTNET_PRIVATE_SALE_CONT
 const USDT_ADDRESS = import.meta.env.REACT_APP_TESTNET_USDT_ADDRESS as `0x${string}`;
 
 const PrivateSalePage: React.FC = () => {
+  const { t } = useLanguage();
   const [form] = Form.useForm();
   const [packages, setPackages] = useState<number>(1);
   const { address: userAddress, isConnected } = useAccount();
@@ -124,7 +174,7 @@ const PrivateSalePage: React.FC = () => {
   // 购买代币方法
   const handleBuyTokens = async (packagesToBuy: number, referrer: string) => {
     try {
-      setTransactionStatus('正在提交购买请求...');
+      setTransactionStatus(t('submittingPurchaseRequest'));
       setIsBuying(true);
 
       // 检查钱包客户端
@@ -144,22 +194,22 @@ const PrivateSalePage: React.FC = () => {
       });
 
       setPurchaseHash(hash);
-      setTransactionStatus(`购买请求已提交，交易哈希：${hash.substring(0, 10)}...${hash.substring(hash.length - 8)}`);
+      setTransactionStatus(`${t('purchaseRequestSubmitted')} ${hash.substring(0, 10)}...${hash.substring(hash.length - 8)}`);
     } catch (error: any) {
 
-      let errorMessage = '购买失败，请稍后重试';
+      let errorMessage = t('purchaseFailedTryAgain');
       
       // 处理常见错误
       if (error.code === 4001) {
-        errorMessage = '用户拒绝了交易';
+        errorMessage = t('userRejectedTransaction');
       } else if (error.code === -32603) {
-        errorMessage = '网络或节点错误，请重试';
+        errorMessage = t('networkOrNodeErrorTryAgain');
       } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'USDT余额不足';
+        errorMessage = t('insufficientUSDTBalance');
       } else if (error.message?.includes('reverted')) {
-        errorMessage = '交易被合约拒绝，请检查输入参数';
-      } else if (error.message?.includes('钱包客户端未连接')) {
-        errorMessage = '钱包客户端未连接，请检查连接状态';
+        errorMessage = t('transactionRejectedByContract');
+      } else if (error.message?.includes('钱包客户端未连接') || error.message?.includes('Wallet client not connected')) {
+        errorMessage = t('walletClientNotConnected');
       }
       
       message.error(errorMessage);
@@ -189,7 +239,8 @@ const PrivateSalePage: React.FC = () => {
   React.useEffect(() => {
     if (isPurchaseConfirmed && purchaseHash) {
       setTransactionStatus('');
-      message.success(`购买成功！交易已确认\n交易哈希: ${purchaseHash.substring(0, 10)}...${purchaseHash.substring(purchaseHash.length - 8)}`);
+      message.success(`${t('purchaseSuccess')}
+${t('transactionHash')}: ${purchaseHash.substring(0, 10)}...${purchaseHash.substring(purchaseHash.length - 8)}`);
       // 购买成功后，重置表单
       form.resetFields(['packages', 'referrer']);
       // 重置交易相关状态
@@ -200,7 +251,8 @@ const PrivateSalePage: React.FC = () => {
     
     if (isPurchaseFailed && purchaseHash) {
       setTransactionStatus('');
-      message.error(`购买失败: ${purchaseError?.message || '未知错误'}\n交易哈希: ${purchaseHash.substring(0, 10)}...${purchaseHash.substring(purchaseHash.length - 8)}`);
+      message.error(`${t('purchaseFailed')}: ${purchaseError?.message || t('unknownError')}
+${t('transactionHash')}: ${purchaseHash.substring(0, 10)}...${purchaseHash.substring(purchaseHash.length - 8)}`);
       // 重置交易相关状态
       setPurchaseHash(undefined);
     }
@@ -209,8 +261,9 @@ const PrivateSalePage: React.FC = () => {
   // 监听授权交易结果
   React.useEffect(() => {
     if (isApprovalConfirmed && approvalHash) {
-      message.success(`USDT授权成功！\n交易哈希: ${approvalHash.substring(0, 10)}...${approvalHash.substring(approvalHash.length - 8)}`);
-      setTransactionStatus('USDT授权成功，正在准备购买...');
+      message.success(`${t('usdtApprovalSuccess')}
+${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.substring(approvalHash.length - 8)}`);
+      setTransactionStatus(t('usdtApprovalSuccessPreparingPurchase'));
       // 授权成功后，自动调用购买方法，使用保存的购买信息
       handleBuyTokens(purchaseInfo.packagesToBuy, purchaseInfo.referrer);
       // 重置授权交易哈希，避免重复触发
@@ -219,7 +272,8 @@ const PrivateSalePage: React.FC = () => {
     
     if (isApprovalFailed && approvalHash) {
       setTransactionStatus('');
-      message.error(`USDT授权失败: ${approvalError?.message || '未知错误'}\n交易哈希: ${approvalHash.substring(0, 10)}...${approvalHash.substring(approvalHash.length - 8)}`);
+      message.error(`${t('usdtApprovalFailed')}: ${approvalError?.message || t('unknownError')}
+${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.substring(approvalHash.length - 8)}`);
       // 重置授权交易哈希，避免重复触发
       setApprovalHash(undefined);
     }
@@ -230,11 +284,11 @@ const PrivateSalePage: React.FC = () => {
     try {
       // 防止在授权或购买进行中重复提交
       if (isApproving || isBuying) {
-        message.info('操作正在进行中，请稍候...');
+        message.info(t('operationInProgress'));
         return;
       }
       
-      setTransactionStatus('正在检查余额和授权...');
+      setTransactionStatus(t('checkingBalanceAndAllowance'));
       
       // 获取表单中的最新值
       const packagesToBuy = values.packages || packages;
@@ -244,38 +298,39 @@ const PrivateSalePage: React.FC = () => {
       const updatedEstimatedUSDT = packagesToBuy * 0.01;
       const updatedRequiredUSDTWei = BigInt(Math.ceil(updatedEstimatedUSDT * 10 ** 18)); // USDT使用18位小数（BSC Testnet）
       
-
-
-
-
-
-
-
-
+      
+      
+      
+      
+      
+      
+      
+      
+      
       
       // 检查钱包连接
       if (!isConnected || !userAddress) {
-        message.error('请先连接钱包');
+        message.error(t('pleaseConnectWalletFirst'));
         setTransactionStatus('');
         return;
       }
 
       // 检查合约状态
       if (isPaused) {
-        message.error('私募销售已暂停，请稍后重试');
+        message.error(t('privateSalePausedTryAgainLater'));
         setTransactionStatus('');
         return;
       }
 
       if (isEnded) {
-        message.error('私募销售已结束，无法继续购买');
+        message.error(t('privateSaleEndedCannotBuy'));
         setTransactionStatus('');
         return;
       }
 
       // 检查购买份数
       if (!packagesToBuy || packagesToBuy < 1 || packagesToBuy > 1000) {
-        message.error('购买份数必须在1到1000之间');
+        message.error(t('packagesRange'));
         setTransactionStatus('');
         return;
       }
@@ -300,32 +355,32 @@ const PrivateSalePage: React.FC = () => {
       // 检查授权（当usdtAllowance不存在、为0或不足时，都需要请求授权）
       // 只有当授权不足且没有正在进行的授权请求时，才请求授权
       if ((usdtAllowance === undefined || usdtAllowance === 0n || usdtAllowance < updatedRequiredUSDTWei) && !approvalHash) {
-        setTransactionStatus('USDT授权不足，正在请求授权...');
+        setTransactionStatus(t('insufficientUSDTAllowanceRequesting'));
         setIsApproving(true);
 
         // 检查钱包客户端
         if (!walletClient) {
-          message.error('钱包客户端未连接');
+          message.error(t('walletClientNotConnected'));
           setTransactionStatus('');
           setIsApproving(false);
           return;
         }
 
-        // 请求授权 - 使用较大金额，避免频繁授权
+        // 请求授权 - 使用实际所需金额，实现"使用多少授权多少"
         const hash = await walletClient.writeContract({
           abi: usdtAbi,
           address: USDT_ADDRESS,
           functionName: 'approve',
           args: [
             PRIVATE_SALE_ADDRESS as `0x${string}`, 
-            BigInt(10 ** 18) // 授权1个USDT，足够多次购买
+            updatedRequiredUSDTWei // 使用实际所需USDT金额
           ],
         });
 
         // 保存当前购买信息到状态，以便授权成功后使用
         setPurchaseInfo({ packagesToBuy, referrer });
         setApprovalHash(hash);
-        message.success('USDT授权请求已提交，正在等待区块链确认...');
+        message.success(t('usdtApprovalRequestSubmitted'));
         setIsApproving(false);
         return;
       }
@@ -334,17 +389,17 @@ const PrivateSalePage: React.FC = () => {
       handleBuyTokens(packagesToBuy, referrer);
     } catch (error: any) {
 
-      let errorMessage = '操作失败，请稍后重试';
+      let errorMessage = t('operationFailedTryAgain');
       
       // 处理常见错误
       if (error.code === 4001) {
-        errorMessage = '用户拒绝了操作';
+        errorMessage = t('userRejectedTransaction');
       } else if (error.code === -32603) {
-        errorMessage = '网络或节点错误，请重试';
+        errorMessage = t('networkOrNodeErrorTryAgain');
       } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'USDT余额不足';
+        errorMessage = t('insufficientUSDTBalance');
       } else if (error.message?.includes('reverted')) {
-        errorMessage = '交易被合约拒绝，请检查输入参数';
+        errorMessage = t('transactionRejectedByContract');
       }
       
       message.error(errorMessage);
@@ -353,202 +408,317 @@ const PrivateSalePage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      maxWidth: globalDesign.layout.maxWidth,
-      margin: '0 auto',
-      backgroundColor: '#000000',
-      padding: '16px',
-    }}>
-      {/* 调试信息 */}
-      <div style={{ 
-        padding: '8px 16px', 
-        backgroundColor: 'rgba(0, 0, 255, 0.1)', 
-        borderRadius: '4px', 
-        marginBottom: '16px',
-        fontSize: '12px',
-        color: '#fff'
+    <div style={{ padding: '20px', backgroundColor: '#000000', minHeight: 'calc(100vh - 180px)' }}>
+      <Title level={2} style={{ 
+        color: COLORS.textPrimary, 
+        textAlign: 'center', 
+        marginBottom: '30px',
+        fontSize: FONT_SIZES.titleLarge,
+        fontWeight: 'bold',
+        lineHeight: LINE_HEIGHTS.title
       }}>
-        <div>钱包连接状态: {isConnected ? '已连接' : '未连接'}</div>
-        <div>用户地址: {userAddress || '无'}</div>
-        <div>usdtBalance: {usdtBalance ? Number(usdtBalance) / 10 ** 18 : '未获取'}</div>
-        <div>usdtAllowance: {usdtAllowance ? Number(usdtAllowance) / 10 ** 18 : '未获取'}</div>
-        <div>合约状态: {isPaused ? '暂停' : '正常'} | {isEnded ? '已结束' : '进行中'}</div>
-      </div>
-      
-      <Title level={2} style={{
-        ...globalStyles.title,
-        marginBottom: globalDesign.spacing.marginBottom,
-        textAlign: globalDesign.layout.textAlign,
-        color: globalDesign.colors.text,
-      }}>
-        SCIA 私募销售
+        <ShoppingCartOutlined style={{ marginRight: '10px', fontSize: FONT_SIZES.titleMedium }} />
+        {t('privateSale')}
       </Title>
 
-      <Card 
-        style={{
-          ...globalStyles.card,
-          backgroundColor: globalDesign.colors.cardBackground,
-          color: globalDesign.colors.text,
-        }}
-        bodyStyle={{
-          padding: globalDesign.spacing.cardPadding,
-          backgroundColor: globalDesign.colors.cardBackground,
-          color: globalDesign.colors.text,
-        }}
+      {/* 加载状态 */}
+      <Spin
+        spinning={false}
+        indicator={<LoadingOutlined style={{ fontSize: FONT_SIZES.titleLarge, color: COLORS.primary }} spin />}
       >
-        {/* 私募信息 */}
-        <div style={{
-          marginBottom: globalDesign.spacing.marginBottom,
-          padding: globalDesign.spacing.padding,
-          backgroundColor: globalDesign.colors.background,
-          borderRadius: globalDesign.borders.borderRadius,
-          border: `${globalDesign.borders.borderWidth} ${globalDesign.borders.borderStyle} ${globalDesign.colors.border}`,
-        }}>
-          <Text style={{ color: globalDesign.colors.textSecondary, marginRight: '16px' }}>
-            价格：0.00001 USDT / SCIA
-          </Text>
-          <br />
-          <Text style={{ color: globalDesign.colors.textSecondary, marginRight: '16px' }}>
-            每包：1000 SCIA (0.01 USDT)
-          </Text>
-          <br />
-          <Text style={{ color: globalDesign.colors.textSecondary, marginRight: '16px' }}>
-            最小购买：1 包
-          </Text>
-          <br />
-          <Text style={{ color: globalDesign.colors.textSecondary }}>
-            最大购买：1000 包
-          </Text>
-        </div>
+        {/* 私募概览信息 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: CARD_MARGIN_BOTTOM, maxWidth: '500px', margin: '0 auto' }}>
+          <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+            <Card style={{ 
+              ...CARD_STYLE, 
+              padding: '20px',
+              textAlign: 'center',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }} hoverable>
+              <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                {t('price')}
+              </Text>
+              <Text style={{ color: COLORS.primary, fontSize: '20px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                0.00001 USDT / SCIA
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+            <Card style={{ 
+              ...CARD_STYLE, 
+              padding: '20px',
+              textAlign: 'center',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }} hoverable>
+              <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                {t('perPackage')}
+              </Text>
+              <Text style={{ color: COLORS.primary, fontSize: '20px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                1000 SCIA
+              </Text>
+              <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodySmall }}>
+                (0.01 USDT)
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+            <Card style={{ 
+              ...CARD_STYLE, 
+              padding: '20px',
+              textAlign: 'center',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }} hoverable>
+              <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                {t('minimumPurchase')}
+              </Text>
+              <Text style={{ color: COLORS.success, fontSize: '20px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                1 {t('package')}
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+            <Card style={{ 
+              ...CARD_STYLE, 
+              padding: '20px',
+              textAlign: 'center',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }} hoverable>
+              <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                {t('maximumPurchase')}
+              </Text>
+              <Text style={{ color: COLORS.success, fontSize: '20px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                1000 {t('packages')}
+              </Text>
+            </Card>
+          </Col>
+        </Row>
 
-        <Divider style={{ borderColor: globalDesign.colors.border }} />
+        {/* 购买表单卡片 */}
+        <div style={{ maxWidth: '500px', margin: '0 auto', marginTop: CARD_MARGIN_BOTTOM }}>
+          <Card 
+            style={{ 
+              ...CARD_STYLE,
+              padding: '0'
+            }}
+            hoverable
+          >
+            <div style={{ padding: '24px' }}>
+              <Divider style={{ borderColor: COLORS.border, margin: '0 0 24px 0' }} />
 
         {/* 购买表单 */}
+        {/* 添加全局样式覆盖，确保表单文字清晰可见 */}
+        <style>{`
+          /* 确保表单标签文字为白色且清晰可见 */
+          .ant-form-item-label > label {
+            color: #ffffff !important;
+            font-size: 22px !important;
+            font-weight: bold !important;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.8) !important;
+            line-height: 1.5 !important;
+          }
+          
+          /* 确保表单输入框文字为白色 */
+          .ant-input,
+          .ant-input-number-input {
+            color: #ffffff !important;
+            font-size: 18px !important;
+          }
+          
+          /* 确保表单占位符文字清晰可见 */
+          .ant-input::placeholder,
+          .ant-input-number-input::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+          }
+        `}</style>
+        
         <Form
           form={form}
           layout="vertical"
           initialValues={{ packages: 1 }}
           onFinish={handleSubmit}
-          style={{ width: '100%' }}
+          style={{ 
+            width: '100%',
+            color: '#ffffff !important', // 确保表单内所有文本默认使用白色
+            fontSize: '18px !important' // 确保全局文字大小
+          }}
+          labelCol={{ 
+            style: { 
+              color: '#ffffff !important', // 确保文字为纯白色
+              fontWeight: 'bold !important',
+              fontSize: '18px !important', // 加大文字尺寸，确保手机端清晰可见
+              marginBottom: '8px',
+              lineHeight: '1.4'
+            } 
+          }}
         >
           <Form.Item
             name="packages"
-            label="购买份数"
+            label={t('buySCIA')}
             rules={[
-              { required: true, message: '请输入购买份数' },
-              { type: 'number', min: 1, max: 1000, message: '购买份数必须在1到1000之间' },
+              { required: true, message: t('enterPackages') },
+              { type: 'number', min: 1, max: 1000, message: t('packagesRange') },
             ]}
-            labelCol={{ style: { color: globalDesign.colors.text } }}
-            validateTrigger={['onBlur', 'onChange']}
+            style={{ marginBottom: '24px' }}
           >
-            <InputNumber
+            <InputNumber<number>
               min={1}
               max={1000}
               defaultValue={1}
               onChange={(value) => setPackages(value || 1)}
               style={{
                 width: '100%',
-                backgroundColor: globalDesign.colors.inputBackground,
-                borderColor: globalDesign.colors.border,
-                color: globalDesign.colors.text,
-                borderRadius: globalDesign.borders.borderRadius,
+                backgroundColor: COLORS.backgroundSecondary,
+                borderColor: COLORS.border, // 恢复原来的边框颜色
+                color: COLORS.textPrimary,
+                borderRadius: '12px',
+                fontSize: '16px',
+                padding: '16px',
+                boxShadow: 'none', // 移除额外的边框阴影
               }}
-              formatter={(value) => `${value}`}
-              parser={(value) => parseInt(value || '1', 10) as any}
+              formatter={(value) => `${value} ${t('packages')}`}
+              parser={(value) => {
+                if (!value) return 1;
+                const match = value.match(/^(\d+)/);
+                return match ? parseInt(match[0], 10) : 1;
+              }}
             />
           </Form.Item>
 
           <Form.Item
             name="referrer"
-            label="推荐人地址 (可选)"
-            labelCol={{ style: { color: globalDesign.colors.text } }}
+            label={t('referrerAddressOptional')}
+            labelCol={{ style: { color: COLORS.textPrimary, fontSize: '18px !important', fontWeight: 'bold', marginBottom: '8px', textShadow: '0 0 4px rgba(0, 0, 0, 0.5)' } }}
             rules={[
               { 
                 pattern: /^0x[a-fA-F0-9]{40}$|^$/, 
-                message: '请输入有效的推荐人钱包地址'
+                message: t('enterReferrerAddress')
               }
             ]}
+            style={{ marginBottom: '24px' }}
           >
             <Input
-              placeholder="请输入推荐人钱包地址"
+              placeholder={t('enterReferrerAddress')}
               style={{
-                backgroundColor: globalDesign.colors.inputBackground,
-                borderColor: globalDesign.colors.border,
-                color: globalDesign.colors.text,
-                borderRadius: globalDesign.borders.borderRadius,
+                width: '100%',
+                backgroundColor: COLORS.backgroundSecondary,
+                borderColor: COLORS.border, // 恢复原来的边框颜色
+                color: '#ffffff', // 输入框文字为纯白色
+                borderRadius: '12px',
+                fontSize: '16px',
+                padding: '16px',
+                boxShadow: 'none', // 移除额外的边框阴影
               }}
+
             />
           </Form.Item>
 
           <Form.Item>
-            <div style={{
-              padding: globalDesign.spacing.padding,
-              backgroundColor: 'rgba(82, 196, 26, 0.1)',
-              borderRadius: globalDesign.borders.borderRadius,
-              border: `${globalDesign.borders.borderWidth} ${globalDesign.borders.borderStyle} ${globalDesign.colors.success}`,
-              marginBottom: globalDesign.spacing.marginBottom,
-            }}>
-              <Text strong style={{ color: globalDesign.colors.success }}>
-                预估金额：{estimatedUSDT} USDT
-              </Text>
-              <br />
-              <Text strong style={{ color: globalDesign.colors.success }}>
-                预估代币数量：{estimatedSCIA} SCIA
-              </Text>
+            <Card 
+              style={{ 
+                ...CARD_STYLE, 
+                marginBottom: '24px',
+                padding: '20px'
+              }}
+              hoverable
+            >
+              <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                  <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                    {t('estimatedAmount')}
+                  </Text>
+                  <Text strong style={{ color: COLORS.success, fontSize: '24px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                    {estimatedUSDT} USDT
+                  </Text>
+                </Col>
+                <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+                  <Text style={{ color: COLORS.textSecondary, display: 'block', marginBottom: '8px', fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                    {t('estimatedSCIA')}
+                  </Text>
+                  <Text strong style={{ color: COLORS.success, fontSize: '24px', fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                    {estimatedSCIA} SCIA
+                  </Text>
+                </Col>
+              </Row>
               {isConnected && (
-                <>
-                  <br />
-                  <Text style={{ color: globalDesign.colors.textSecondary }}>
-                    {isUSDTBalanceLoading ? '加载USDT余额中...' : `USDT余额：${usdtBalance ? (Number(usdtBalance) / 10 ** 18).toFixed(4) : '0'} USDT`}
-                    {typeof usdtBalance === 'bigint' && !isBalanceSufficient() && (
-                      <Text style={{ color: globalDesign.colors.danger, marginLeft: '8px' }}>
-                        （余额不足）
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${COLORS.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                        {isUSDTBalanceLoading ? t('loading') : t('usdtBalance')}
                       </Text>
-                    )}
-                  </Text>
-                  <br />
-                  <Text style={{ color: globalDesign.colors.textSecondary }}>
-                    {isUSDTAllowanceLoading ? '加载USDT授权中...' : `USDT授权：${usdtAllowance ? (Number(usdtAllowance) / 10 ** 18).toFixed(4) : '0'} USDT`}
-                    {typeof usdtAllowance === 'bigint' && !isAllowanceSufficient() && (
-                      <Text style={{ color: globalDesign.colors.warning, marginLeft: '8px' }}>
-                        （授权不足）
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Text style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyLarge, fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                          {isUSDTBalanceLoading ? '...' : `${usdtBalance ? (Number(usdtBalance) / 10 ** 18).toFixed(4) : '0'} USDT`}
+                        </Text>
+                        {typeof usdtBalance === 'bigint' && !isBalanceSufficient() && (
+                          <Tag color="error" style={{ fontSize: FONT_SIZES.bodySmall }}>{t('insufficientBalance')}</Tag>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: COLORS.textSecondary, fontSize: FONT_SIZES.bodyMedium, lineHeight: LINE_HEIGHTS.body }}>
+                        {isUSDTAllowanceLoading ? t('loading') : t('usdtAllowance')}
                       </Text>
-                    )}
-                  </Text>
-                </>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Text style={{ color: COLORS.textPrimary, fontSize: FONT_SIZES.bodyLarge, fontWeight: 'bold', lineHeight: LINE_HEIGHTS.title }}>
+                          {isUSDTAllowanceLoading ? '...' : `${usdtAllowance ? (Number(usdtAllowance) / 10 ** 18).toFixed(4) : '0'} USDT`}
+                        </Text>
+                        {typeof usdtAllowance === 'bigint' && !isAllowanceSufficient() && (
+                          <Tag color="warning" style={{ fontSize: FONT_SIZES.bodySmall }}>{t('insufficientAllowance')}</Tag>
+                        )}
+                      </div>
+                    </div>
+                </div>
               )}
-            </div>
+            </Card>
           </Form.Item>
 
           {/* 交易状态显示 */}
           {transactionStatus && (
-            <div style={{
-              padding: globalDesign.spacing.padding,
-              backgroundColor: 'rgba(24, 144, 255, 0.1)',
-              borderRadius: globalDesign.borders.borderRadius,
-              border: `${globalDesign.borders.borderWidth} ${globalDesign.borders.borderStyle} ${globalDesign.colors.primary}`,
-              marginBottom: globalDesign.spacing.marginBottom,
-            }}>
-              <Text strong style={{ color: globalDesign.colors.primary }}>
+            <Card 
+              style={{ 
+                ...CARD_STYLE, 
+                backgroundColor: `rgba(24, 144, 255, 0.1)`,
+                border: `1px solid ${COLORS.primary}33`,
+                marginBottom: '24px',
+                padding: '20px'
+              }}
+            >
+              <Text strong style={{ color: COLORS.primary, fontSize: FONT_SIZES.bodyLarge, fontWeight: 'bold', display: 'block', marginBottom: '16px', lineHeight: LINE_HEIGHTS.title }}>
                 {transactionStatus}
               </Text>
               {approvalHash && (
-                <>
-                  <br />
-                  <Text style={{ fontSize: '12px', color: globalDesign.colors.textSecondary }}>
-                    授权交易哈希：{approvalHash}
+                <div style={{ marginBottom: '12px' }}>
+                  <Text style={{ fontSize: FONT_SIZES.bodyMedium, color: COLORS.textSecondary, display: 'block', marginBottom: '8px', lineHeight: LINE_HEIGHTS.body }}>
+                    {t('approvalTransactionHash')}
                   </Text>
-                </>
+                  <Text style={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textPrimary, wordBreak: 'break-all', lineHeight: LINE_HEIGHTS.body, backgroundColor: COLORS.backgroundSecondary, padding: '8px 12px', borderRadius: '6px', display: 'block' }}>
+                    {approvalHash.substring(0, 10)}...{approvalHash.substring(approvalHash.length - 8)}
+                  </Text>
+                </div>
               )}
               {purchaseHash && (
-                <>
-                  <br />
-                  <Text style={{ fontSize: '12px', color: globalDesign.colors.textSecondary }}>
-                    购买交易哈希：{purchaseHash}
+                <div>
+                  <Text style={{ fontSize: FONT_SIZES.bodyMedium, color: COLORS.textSecondary, display: 'block', marginBottom: '8px', lineHeight: LINE_HEIGHTS.body }}>
+                    {t('purchaseTransactionHash')}
                   </Text>
-                </>
+                  <Text style={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textPrimary, wordBreak: 'break-all', lineHeight: LINE_HEIGHTS.body, backgroundColor: COLORS.backgroundSecondary, padding: '8px 12px', borderRadius: '6px', display: 'block' }}>
+                    {purchaseHash.substring(0, 10)}...{purchaseHash.substring(purchaseHash.length - 8)}
+                  </Text>
+                </div>
               )}
-            </div>
+            </Card>
           )}
 
           <Form.Item>
@@ -556,26 +726,33 @@ const PrivateSalePage: React.FC = () => {
               type="primary"
               htmlType="submit"
               style={{
-                ...globalStyles.buttonPrimary,
                 width: '100%',
-                padding: globalDesign.button.padding,
-                fontSize: globalDesign.button.fontSize,
-                borderRadius: globalDesign.borders.borderRadius,
-                fontWeight: globalDesign.typography.fontWeightBold,
+                padding: '16px 24px',
+                fontSize: FONT_SIZES.titleSmall,
+                borderRadius: '12px',
+                fontWeight: 'bold',
+                backgroundColor: COLORS.primary,
+                color: COLORS.textPrimary,
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)',
+                transition: 'all 0.3s ease',
               }}
               disabled={!isConnected || isPaused || isEnded}
               loading={isApproving || isBuying || isApprovalConfirming || isPurchaseConfirming}
             >
-              {!isConnected ? '连接钱包购买' : 
-               isPaused ? '销售已暂停' : 
-               isEnded ? '销售已结束' : 
-               isApproving || isApprovalConfirming ? 'USDT授权中...' : 
-               isBuying || isPurchaseConfirming ? '购买中...' : 
-               '立即购买'}
+              {!isConnected ? t('connectWalletToBuy') : 
+               isPaused ? t('salePaused') : 
+               isEnded ? t('saleEnded') : 
+               isApproving || isApprovalConfirming ? t('usdtApproving') : 
+               isBuying || isPurchaseConfirming ? t('buying') : 
+               t('buyNow')}
             </Button>
           </Form.Item>
         </Form>
-      </Card>
+            </div>
+          </Card>
+        </div>
+      </Spin>
     </div>
   );
 };
