@@ -20,18 +20,64 @@ SCIADapp - 基于区块链的私募和推荐奖励DAPP
 ```
 SCIA/
 ├── contracts/             # 智能合约目录（已部署测试网，合约间测试完成）
-│   ├── core/            # 核心合约（预留）
+│   ├── core/            # 核心合约
+│   │   └── SanciaToken.sol   # SCIA代币合约（已部署）
 │   └── modules/         # 功能模块合约
 │       ├── PrivateSaleContract.sol  # 私募合约（已部署）
 │       └── ReferralCenter.sol       # 推荐中心合约（已部署）
 ├── src/                  # 前端代码目录
 │   ├── abi/             # 合约ABI文件
-│   ├── components/       # 通用组件
-│   ├── constants/        # 常量定义
-│   ├── pages/            # 页面组件
-│   └── App.tsx           # 应用入口
-├── dist/                 # 构建输出目录
-├── project_index.md      # 项目索引文件（本文件）
+│   │   ├── privateSale.ts     # 私募合约ABI
+│   │   ├── referralCenter.ts  # 推荐中心合约ABI
+│   │   ├── scia.ts            # SCIA代币ABI
+│   │   └── usdt.ts            # USDT代币ABI
+│   ├── app/             # 应用核心配置
+│   │   ├── providers.tsx      # 全局 providers 配置
+│   │   └── store.ts           # Redux store 配置
+│   ├── assets/          # 静态资源
+│   │   └── Sancialogo.svg     # SCIA 品牌标识
+│   ├── components/      # 通用组件
+│   │   ├── Footer.tsx         # 页脚组件
+│   │   ├── Header.tsx         # 头部导航组件
+│   │   └── WalletConnect.tsx  # 钱包连接组件
+│   ├── constants/       # 常量定义
+│   │   └── globalDesign.ts    # 全局设计常量
+│   ├── contexts/        # 全局上下文
+│   │   └── LanguageContext.tsx # 语言切换上下文
+│   ├── features/        # Redux 功能模块
+│   │   ├── user.ts            # 用户相关功能
+│   │   └── wallet/            # 钱包功能
+│   │       └── walletSlice.ts # 钱包状态管理
+│   ├── hooks/           # 自定义 hooks
+│   │   └── useWalletStatus.ts # 钱包状态 hook
+│   ├── lib/             # 工具库
+│   │   └── wagmi.ts           # wagmi 配置
+│   ├── pages/           # 页面组件
+│   │   ├── CommunityPage.tsx  # 社区页面
+│   │   ├── Layout.tsx         # 布局组件
+│   │   ├── MallPage.tsx       # 商城页面
+│   │   ├── NFTPage.tsx        # NFT 页面
+│   │   ├── PrivateSale.tsx    # 私募页面
+│   │   ├── Profile.tsx        # 个人中心页面
+│   │   ├── Splash.tsx         # 启动页面
+│   │   └── Statistics.tsx     # 统计页面
+│   ├── styles/          # 样式文件
+│   │   └── global.css         # 全局样式
+│   ├── tests/           # 测试文件
+│   │   └── dapp-real-perf-test-scia.cjs # 性能测试脚本
+│   ├── App.tsx          # 应用入口
+│   ├── main.tsx         # 主入口文件
+│   └── vite-env.d.ts    # Vite 环境类型定义
+├── .gitignore           # Git 忽略文件
+├── dapp-test-intermediate.json # 测试中间数据
+├── index.html           # HTML 入口文件
+├── package-lock.json    # npm 依赖锁文件
+├── package.json         # 项目配置文件
+├── project_index.md     # 项目索引文件（本文件）
+├── tsconfig.json        # TypeScript 配置
+├── tsconfig.node.json   # TypeScript Node 配置
+├── vite.config.ts       # Vite 配置
+└── dist/                # 构建输出目录（生成）
 ```
 
 ## 3. 项目配置
@@ -49,7 +95,7 @@ REACT_APP_MAINNET_BSC_SCAN_URL=https://bscscan.com/
 
 # 测试网配置
 REACT_APP_TESTNET_CHAIN_ID=97
-REACT_APP_TESTNET_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
+REACT_APP_TESTNET_RPC_URL=https://bsc-testnet-rpc.publicnode.com
 REACT_APP_TESTNET_BSC_SCAN_URL=https://testnet.bscscan.com/
 
 # 主网合约地址
@@ -104,25 +150,44 @@ REACT_APP_BSCSCAN_API_KEY=RW6NUTIX67H7C8K14PCEJ22TSRVN8FGDDQ
 ### 4.4 导航配置
 
 #### 4.4.1 顶部导航
-- 包含Sancta品牌标识
-- 连接钱包按钮
+- 彩色SCIA品牌标识
+- 语言切换按钮
+- 扫描二维码按钮
+- 连接钱包按钮（RainbowKit）
 
 #### 4.4.2 底部导航
-- 私募
-- 我
+- 私募（/buy）
+- 数据（/data）
+- 社区（/community）
+- 商城（/mall）
+- NFT（/nft）
+- 我（/me）
 
 #### 4.4.3 页面配置
-- 私募页面：已配置，可正常使用
-- 个人中心页面：已配置，可正常使用
+- 启动页面（Splash.tsx）：已配置，可正常使用
+- 私募页面（PrivateSale.tsx）：已配置，可正常使用
+- 数据统计页面（Statistics.tsx）：已配置，可正常使用
+- 社区页面（CommunityPage.tsx）：已配置，可正常使用
+- 商城页面（MallPage.tsx）：已配置，可正常使用
+- NFT页面（NFTPage.tsx）：已配置，可正常使用
+- 个人中心页面（Profile.tsx）：已配置，可正常使用
 
 ### 4.5 功能集成
-- **当前工作重点**：DAPP与合约以及钱包之间的功能集成
-- **合约状态**：所有合约已部署到测试网，合约间测试全部完成
-- **项目结构**：已按照设计文档创建完整的前端项目结构
+- **当前项目状态**：已完成测试版最终阶段，所有核心功能已实现并测试通过
+- **合约状态**：所有合约已部署到BSC测试网，合约间测试完成
+- **项目结构**：已创建完整的前端项目结构
 - **依赖安装**：已安装所有必要依赖，包括React 18、TypeScript、Vite 5、RainbowKit 2、Wagmi 2、Ant Design 5、Viem等
-- **页面配置**：已完成基础页面和路由配置，包括私募页面、个人中心页面
+- **页面配置**：已完成所有页面和路由配置，包括：
+  - 启动页面（Splash.tsx）
+  - 私募页面（PrivateSale.tsx）
+  - 数据统计页面（Statistics.tsx）
+  - 社区页面（CommunityPage.tsx）
+  - 商城页面（MallPage.tsx）
+  - NFT页面（NFTPage.tsx）
+  - 个人中心页面（Profile.tsx）
+
 - **已实现功能**：
-  - ✅ 钱包连接功能：使用RainbowKit和Wagmi实现
+  - ✅ 钱包连接功能：使用RainbowKit和Wagmi实现，支持多种钱包
   - ✅ 私募购买功能：完整实现，包括USDT余额检查、授权处理、交易状态管理和错误处理
   - ✅ 个人中心数据展示：基础信息、徽章和积分展示
   - ✅ 徽章和积分展示：从合约获取徽章等级和积分信息，显示当前徽章和升级所需剩余积分
@@ -139,15 +204,15 @@ REACT_APP_BSCSCAN_API_KEY=RW6NUTIX67H7C8K14PCEJ22TSRVN8FGDDQ
   - ✅ 用户体验优化：实时显示余额和授权状态、预估金额和代币数量自动更新、友好的错误提示、购买按钮状态根据条件动态变化、交易结果清晰展示
   - ✅ 复制链接功能：完整实现，使用navigator.clipboard API，支持成功/失败提示
   - ✅ 推广二维码生成：完整实现，使用qrcode.react库生成二维码，支持下载真实的SVG文件
-- **当前项目状态**：
-  - 个人中心页面已实现完整功能，包括推荐系统、分红领取、SCIA余额查询等
-  - 推荐系统功能已完整实现，直接从合约获取数据
-  - 徽章和积分展示已实现，计算逻辑与合约一致
-  - 积分系统和徽章升级功能已确认正常，包括：
-    - 徽章等级展示正确
-    - 升级所需剩余积分计算准确
-    - 积分值显示与合约一致
-    - 徽章升级逻辑正常
+  - ✅ **全局中英文切换功能**：
+    - ✅ 顶部导航语言切换按钮
+    - ✅ 完整的翻译内容库（1000+翻译条目）
+    - ✅ localStorage持久化语言偏好
+    - ✅ 所有页面支持语言切换
+    - ✅ 支持参数化翻译
+  - ✅ 扫描二维码功能：支持扫描推荐人二维码，自动填充推荐人地址
+  - ✅ 响应式设计：适配桌面端、移动端和平板端
+
 - **待完善功能**：
   - 前端未使用到的合约函数：
     - `setPrivateSaleContract` - 设置私募合约地址（管理员功能）
@@ -166,7 +231,8 @@ REACT_APP_BSCSCAN_API_KEY=RW6NUTIX67H7C8K14PCEJ22TSRVN8FGDDQ
   - 实现完整的测试用例
   - 优化合约交互性能
   - 添加更多的错误处理和异常情况处理
-  - 实现响应式设计，适配移动端设备
+  - 实现管理员功能UI
+  - 添加事件监听机制
 
 ### 4.6 实际功能统计
 
@@ -576,5 +642,5 @@ interface IReferralCenter {
 ---
 
 **创建日期**：2026-01-10  
-**版本**：V1.1.7  
-**最后更新**：2026-01-13
+**版本**：V1.2.0  
+**最后更新**：2026-01-14
