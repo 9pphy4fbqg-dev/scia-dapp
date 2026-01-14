@@ -73,9 +73,6 @@ jobs:
       # =====================================
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          # 可选：自定义域名
-          # cname: your-domain.com
           
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
