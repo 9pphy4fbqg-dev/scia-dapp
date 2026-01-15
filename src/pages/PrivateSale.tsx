@@ -3,6 +3,7 @@ import { Form, InputNumber, Input, Button, Card, Divider, Typography, message, R
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
 import { privateSaleAbi } from '../abi/privateSale';
 import { usdtAbi } from '../abi/usdt';
+import { referralCenterAbi } from '../abi/referralCenter';
 import { ShoppingCartOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -59,6 +60,7 @@ const { Title, Text } = Typography;
 // 获取合约地址
 const PRIVATE_SALE_ADDRESS = import.meta.env.REACT_APP_TESTNET_PRIVATE_SALE_CONTRACT_ADDRESS as `0x${string}`;
 const USDT_ADDRESS = import.meta.env.REACT_APP_TESTNET_USDT_ADDRESS as `0x${string}`;
+const REFERRAL_CENTER_ADDRESS = import.meta.env.REACT_APP_TESTNET_REFERRAL_CENTER_ADDRESS as `0x${string}`;
 
 const PrivateSalePage: React.FC = () => {
   const { t } = useLanguage();
@@ -279,6 +281,77 @@ ${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.subst
     }
   }, [isApprovalConfirmed, isApprovalFailed, approvalError, handleBuyTokens, purchaseInfo, approvalHash]);
 
+  // 检查推荐关系是否存在循环
+  const checkReferralCycle = async (user: string, referrer: string): Promise<boolean> => {
+    if (referrer === '0x0000000000000000000000000000000000000000' || user === referrer) {
+      return false;
+    }
+    
+    try {
+      // 创建一个集合来跟踪已访问的地址
+      const visited = new Set<string>();
+      visited.add(user);
+      
+      let current = referrer;
+      
+      // 最多检查50层，防止无限循环
+      for (let i = 0; i < 50; i++) {
+        // 如果当前地址已经访问过，说明存在循环
+        if (visited.has(current)) {
+          return true;
+        }
+        
+        visited.add(current);
+        
+        // 读取当前地址的推荐人 - 使用eth_call直接调用合约
+        const nextReferrer = await window.ethereum?.request({
+          method: 'eth_call',
+          params: [
+            {
+              to: REFERRAL_CENTER_ADDRESS,
+              data: `0x${(await import('viem')).encodeFunctionData({
+                abi: referralCenterAbi,
+                functionName: 'referrers',
+                args: [current as `0x${string}`]
+              }).slice(2)}`,
+            },
+            'latest',
+          ],
+        });
+        
+        // 如果没有推荐人了，说明推荐链结束，没有循环
+        if (!nextReferrer || nextReferrer === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+          return false;
+        }
+        
+        // 解析返回的地址
+        let parsedAddress = nextReferrer;
+        if (parsedAddress.startsWith('0x')) {
+          parsedAddress = parsedAddress.slice(2);
+        }
+        // 确保地址长度正确（32字节 -> 64字符，转换为以太坊地址需要取后20字节）
+        if (parsedAddress.length === 64) {
+          parsedAddress = '0x' + parsedAddress.slice(24); // 取后20字节作为地址
+        } else if (parsedAddress.length === 40) {
+          parsedAddress = '0x' + parsedAddress;
+        } else {
+          // 无效地址，结束检查
+          return false;
+        }
+        
+        current = parsedAddress;
+      }
+      
+      // 超过50层，可能存在循环，也可能是非常深的推荐链
+      // 为了安全起见，返回true，阻止这种情况
+      return true;
+    } catch (error) {
+      console.error('Error checking referral cycle:', error);
+      // 发生错误时，为了安全起见，返回true，阻止交易
+      return true;
+    }
+  };
+
   // 表单提交处理
   const handleSubmit = async (values: any) => {
     try {
@@ -297,16 +370,6 @@ ${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.subst
       // 重新计算所需USDT
       const updatedEstimatedUSDT = packagesToBuy * 0.01;
       const updatedRequiredUSDTWei = BigInt(Math.ceil(updatedEstimatedUSDT * 10 ** 18)); // USDT使用18位小数（BSC Testnet）
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
       
       // 检查钱包连接
       if (!isConnected || !userAddress) {
@@ -350,6 +413,16 @@ ${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.subst
         message.error('私募池余额不足，无法完成购买');
         setTransactionStatus('');
         return;
+      }
+
+      // 检查推荐关系是否存在循环
+      if (referrer && referrer.trim() && referrer !== '0x0000000000000000000000000000000000000000') {
+        const hasCycle = await checkReferralCycle(userAddress as string, referrer.trim());
+        if (hasCycle) {
+          message.error('推荐关系形成循环，请更换推荐人');
+          setTransactionStatus('');
+          return;
+        }
       }
 
       // 检查授权（当usdtAllowance不存在、为0或不足时，都需要请求授权）
@@ -399,7 +472,12 @@ ${t('transactionHash')}: ${approvalHash.substring(0, 10)}...${approvalHash.subst
       } else if (error.message?.includes('insufficient funds')) {
         errorMessage = t('insufficientUSDTBalance');
       } else if (error.message?.includes('reverted')) {
-        errorMessage = t('transactionRejectedByContract');
+        // 检查是否是循环推荐导致的错误
+        if (error.message.includes('Stack too deep') || error.message.includes('Out of gas') || error.message.includes('execution reverted')) {
+          errorMessage = '推荐关系形成循环，请更换推荐人';
+        } else {
+          errorMessage = t('transactionRejectedByContract');
+        }
       }
       
       message.error(errorMessage);
