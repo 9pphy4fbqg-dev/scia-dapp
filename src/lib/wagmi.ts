@@ -24,12 +24,12 @@ const connectors = connectorsForWallets(wallets, {
   projectId,
 });
 
-// 使用可用的BSC测试网RPC节点
+// 使用环境变量中的BSC测试网RPC节点
 export const config = createConfig({
   chains: [bscTestnet],
   connectors,
   transports: {
-    [bscTestnet.id]: http('https://bsc-testnet-rpc.publicnode.com'),
+    [bscTestnet.id]: http(import.meta.env.REACT_APP_TESTNET_RPC_URL),
   },
   ssr: true,
 });

@@ -250,7 +250,7 @@ const ProfilePage = () => {
   }, [loadDirectReferrals]);
 
   // 递归构建推荐树并统计推荐人数
-  const buildReferralTree = async (address: string, depth: number = 0): Promise<{ node: any; count: number }> => {
+  const buildReferralTree = async (address: string, depth: number = 0, visited: Set<string> = new Set()): Promise<{ node: any; count: number }> => {
     // 使用钱包地址作为节点标题
     const node: any = {
       title: `${address.slice(0, 8)}...${address.slice(-6)}`,
@@ -260,6 +260,14 @@ const ProfilePage = () => {
     
     let totalCount = 1; // 包括当前节点
     let index = 0;
+    
+    // 如果该地址已经被访问过，说明存在循环，返回当前节点（不包含子节点）
+    if (visited.has(address)) {
+      return { node, count: totalCount };
+    }
+    
+    // 将当前地址添加到已访问集合中
+    visited.add(address);
     
     while (true) {
       try {
@@ -292,7 +300,9 @@ const ProfilePage = () => {
             parsedAddress = '0x' + parsedAddress;
           }
           
-          const { node: childNode, count: childCount } = await buildReferralTree(parsedAddress, depth + 1);
+          // 创建新的visited集合副本，避免不同分支之间的相互影响
+          const newVisited = new Set(visited);
+          const { node: childNode, count: childCount } = await buildReferralTree(parsedAddress, depth + 1, newVisited);
           if (childNode) {
             node.children.push(childNode);
             totalCount += childCount;

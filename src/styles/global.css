@@ -20,14 +20,14 @@
   --border-color: rgba(255, 255, 255, 0.15);
   --input-bg: rgba(255, 255, 255, 0.1);
   
-  /* 字体变量 */
+  /* 字体变量 - 默认（桌面端） */
   --font-size-xl: 24px;
   --font-size-large: 20px;
   --font-size-medium: 14px;
   --font-size-small: 12px;
   --font-weight-bold: 500;
   
-  /* 间距变量 */
+  /* 间距变量 - 默认（桌面端） */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -45,6 +45,8 @@
   /* 过渡效果 */
   --transition: all 0.3s ease;
 }
+
+
 
 /* 模态框专用深色主题样式 - 强制覆盖所有默认样式 */
 #root .ant-modal,
@@ -79,14 +81,335 @@ body {
   background-color: #000000;
 }
 
-/* 全局点击缩放效果 - 与原项目保持一致 */
+/* 全局点击缩放效果 - 移动端优化 */
 button:active,
 .a:active,
 [onclick]:active,
-[role="button"]:active {
+[role="button"]:active,
+.nav-item:active,
+.nav-icon:active,
+.scan-modal-close-btn:active {
   transform: scale(0.95);
   transition: transform 0.1s ease;
   cursor: pointer;
+  opacity: 0.8;
+}
+
+/* 移动端样式 - 所有移动端样式集中管理 */
+@media (max-width: 767px) {
+  /* 移动端字体和间距优化 */
+  :root {
+    /* 调整移动端字体大小，提高可读性 */
+    --font-size-xl: 20px;
+    --font-size-large: 18px;
+    --font-size-medium: 15px;
+    --font-size-small: 12px;
+    
+    /* 调整移动端间距，优化触摸体验 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+  }
+  
+  /* 调整页面容器间距 */
+  .page-content {
+    padding: var(--spacing-sm) !important;
+  }
+  
+  /* 调整卡片内边距 */
+  .private-sale-section,
+  .profile-section {
+    padding: var(--spacing-md) !important;
+  }
+  
+  /* 调整标题大小 */
+  h1, .h1 {
+    font-size: 22px !important;
+  }
+  
+  h2, .h2 {
+    font-size: 18px !important;
+  }
+  
+  h3, .h3 {
+    font-size: 16px !important;
+  }
+  
+  h4, .h4 {
+    font-size: 14px !important;
+  }
+  
+  /* 调整按钮字体大小 */
+  button {
+    font-size: var(--font-size-medium) !important;
+    min-height: 40px !important;
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
+  }
+  
+  /* 调整输入框字体大小和内边距 */
+  input,
+  select,
+  textarea {
+    font-size: var(--font-size-medium) !important;
+    padding: var(--spacing-xs) !important;
+    height: 40px !important;
+  }
+  
+  /* 调整底部导航字体大小 */
+  .footer-label {
+    font-size: var(--font-size-small) !important;
+  }
+  
+  /* 调整彩虹按钮字体大小 */
+  #root .rk-ConnectButton {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    height: 24px !important;
+    min-width: 70px !important;
+  }
+  
+  /* 调整模态框标题大小 */
+  .scan-modal-title {
+    font-size: var(--font-size-large) !important;
+  }
+  
+  /* 调整扫描状态文字大小 */
+  .scan-status {
+    font-size: var(--font-size-medium) !important;
+  }
+  
+  /* 全新黄色框紧凑导航设计 */
+  .bottom-nav {
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    height: 64px !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  
+  .nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-decoration: none !important;
+    font-size: 14px !important;
+    padding: 8px 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    flex: 1 !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    height: 48px !important;
+    text-align: center !important;
+    border-radius: 6px !important;
+    background-color: transparent !important;
+    border: none !important;
+    margin: 0 2px !important;
+  }
+  
+  .nav-item.active {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .nav-item-icon {
+    font-size: 24px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    display: block !important;
+    color: inherit !important;
+  }
+  
+  .nav-item span {
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    font-size: 14px !important;
+    color: inherit !important;
+    text-align: center !important;
+    font-weight: 500 !important;
+  }
+  
+  /* 调整顶部导航栏间距 */
+  .top-nav {
+    padding: 8px 12px !important;
+  }
+  
+  .top-nav-left {
+    gap: 12px !important;
+  }
+  
+  /* 调整logo大小 */
+  .logo-container {
+    font-size: 24px !important;
+  }
+  
+  .logo-letter {
+    font-size: 24px !important;
+  }
+  
+  /* 移动端触摸反馈 */
+  /* 为可点击元素添加触摸反馈 */
+  button,
+  a,
+  [onclick],
+  [role="button"],
+  .nav-item,
+  .nav-icon,
+  .scan-modal-close-btn {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.3);
+    touch-action: manipulation;
+  }
+  
+  /* 移除按钮默认高亮 */
+  button:focus,
+  a:focus,
+  [onclick]:focus,
+  [role="button"]:focus {
+    outline: none;
+  }
+  
+  /* 优化输入元素的触摸体验 */
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: var(--border-radius);
+  }
+  
+  /* 优化滚动体验 */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 移除默认滚动条 */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* 优化长文本处理 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-size-adjust: 100%;
+  }
+  
+  /* 优化链接点击区域 */
+  a {
+    display: inline-block;
+    min-height: 44px;
+    min-width: 44px;
+    line-height: 44px;
+  }
+  
+  /* 优化按钮触摸区域 */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 移动端布局 */
+  /* 移动端保持居中布局 */
+  .header,
+  .main-content,
+  .footer {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  /* 调整logo大小 */
+  .logo-container {
+    font-size: 24px;
+  }
+  
+  .logo-letter {
+    font-size: 24px;
+  }
+  
+  /* 调整模态框大小 */
+  .scan-modal-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+  
+  /* 调整扫描区域大小 */
+  .scan-area {
+    width: 80vw;
+    height: 80vw;
+    max-width: 300px;
+    max-height: 300px;
+  }
+  
+  /* 移动端模态框优化 */
+  #root .ant-modal {
+    width: 100vw !important;
+    max-width: none !important;
+    top: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  
+  #root .ant-modal-content {
+    border-radius: 0 !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+  }
+  
+  /* 移动端模态框内容优化 */
+  #root .ant-modal-body {
+    max-height: none !important;
+    min-height: calc(100vh - 80px) !important;
+    padding: var(--spacing-md) !important;
+  }
+  
+  /* 移动端模态框按钮优化 */
+  #root .ant-modal-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  #root .ant-modal-footer button {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
 }
 
 /* 确保链接和导航项可点击 - 与原项目保持一致 */
@@ -106,16 +429,327 @@ a {
   background-color: var(--bg-color);
 }
 
-/* 移动端样式 */
-@media (max-width: 767px) {
-  /* 移动端保持居中布局 */
-  .header,
-  .main-content,
-  .footer {
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-  }
+/* 布局组件样式 - 移动端优先 */
+.layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* 顶部导航栏 */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-nav-left {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* LOGO样式 */
+.logo-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.logo-letter {
+  font-size: 32px;
+  font-weight: bold;
+  display: inline-block;
+  color: var(--text-color);
+}
+
+.logo-letter-S {
+  color: #FF0000;
+}
+
+.logo-letter-a1 {
+  color: #FFA500;
+}
+
+.logo-letter-n {
+  color: #FFFF00;
+}
+
+.logo-letter-c {
+  color: #008000;
+}
+
+.logo-letter-i {
+  color: #00FFFF;
+}
+
+.logo-letter-a2 {
+  color: #0000FF;
+}
+
+.top-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+  justify-content: flex-end;
+}
+
+/* 底部导航栏 - 黄色框设计 */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  height: 64px;
+  backdrop-filter: blur(10px);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  gap: 6px;
+  line-height: 1;
+  height: 48px;
+  text-align: center;
+  border-radius: 6px;
+  background-color: transparent;
+  border: none;
+  margin: 0 2px;
+  min-width: 50px;
+  max-width: 60px;
+}
+
+.nav-item.active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item-icon {
+  font-size: 24px;
+  margin: 0;
+  line-height: 1;
+  padding: 0;
+  display: block;
+  color: inherit;
+}
+
+.nav-item span {
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  display: block;
+  font-size: 14px;
+  color: inherit;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* 扫描二维码模态框 */
+.scan-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.scan-modal.hidden {
+  display: none;
+}
+
+.scan-modal-content {
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scan-modal-header {
+  padding: 16px 24px;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scan-modal-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.scan-modal-title {
+  color: var(--text-color);
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.scan-modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-modal-body {
+  padding: 24px;
+  background-color: var(--bg-color);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.scan-area-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.scan-area {
+  width: 300px;
+  height: 300px;
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.scan-area-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--primary-color);
+  animation: scan 2s infinite linear;
+  opacity: 0.7;
+}
+
+.scan-overlay {
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  right: 25%;
+  bottom: 25%;
+  border: 2px solid var(--primary-color);
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.scan-initializing {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-color);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
+.scan-initializing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scan-initializing-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+  color: var(--primary-color);
+}
+
+.scan-status {
+  color: var(--primary-color);
+  font-size: 14px;
+}
+
+.manual-input-option {
+  text-align: center;
+  width: 100%;
+}
+
+.manual-input-link {
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 动画 */
+@keyframes scan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(300px); }
 }
 
 /* 平板和桌面端样式 - 自适应，不嵌套 */
@@ -165,12 +799,7 @@ a {
   background-color: var(--bg-color);
 }
 
-.page-content {
-  flex: 1;
-  padding: var(--spacing-md);
-  width: 100%;
-}
-
+.page-content,
 .main-content {
   flex: 1;
   padding: var(--spacing-md);
@@ -236,23 +865,6 @@ a {
   width: 100%;
 }
 
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--text-light);
-  text-decoration: none;
-  transition: var(--transition);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-small);
-}
-
-.nav-item.active {
-  color: var(--primary-color);
-  background-color: rgba(24, 144, 255, 0.1);
-}
-
 .footer-content {
   display: flex;
   justify-content: space-around;
@@ -315,12 +927,12 @@ button:disabled {
 }
 
 button.secondary {
-  background-color: var(--secondary-color);
+  background-color: var(--card-bg);
   color: white;
 }
 
 button.danger {
-  background-color: var(--error-color);
+  background-color: var(--danger-color);
   color: white;
 }
 
@@ -374,7 +986,8 @@ button.outline {
   margin-bottom: var(--spacing-lg);
   color: var(--text-color);
   text-align: center;
-  font-size: var(--font-size-large);
+  font-size: 24px;
+  font-size: var(--font-size-xl);
 }
 
 .purchase-info {
@@ -388,7 +1001,8 @@ button.outline {
 .purchase-info p {
   margin-bottom: var(--spacing-xs);
   color: var(--text-light);
-  font-size: var(--font-size-small);
+  font-size: 16px;
+  font-size: var(--font-size-medium);
 }
 
 .purchase-form {
@@ -407,7 +1021,8 @@ button.outline {
   margin-bottom: var(--spacing-xs);
   color: var(--success-color);
   font-weight: 500;
-  font-size: var(--font-size-small);
+  font-size: 16px;
+  font-size: var(--font-size-medium);
 }
 
 .purchase-btn {
@@ -690,54 +1305,73 @@ button.outline {
 #root .ant-modal {
   background-color: transparent !important;
   box-shadow: none !important;
+  width: 90vw !important;
+  max-width: 500px !important;
+  margin: 0 auto !important;
+  top: 10% !important;
 }
 
 #root .ant-modal-wrap {
   background-color: transparent !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
 }
 
 #root .ant-modal-mask {
-  background-color: rgba(0, 0, 0, 0.65) !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(5px) !important;
 }
 
 #root .ant-modal-content {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--bg-color) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   box-shadow: var(--shadow) !important;
   background-clip: padding-box !important;
   overflow: hidden !important;
 }
 
 #root .ant-modal-header {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--bg-color) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 8px 8px 0 0 !important;
-  padding: var(--spacing-md) !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: var(--spacing-md) var(--spacing-lg) !important;
 }
 
 #root .ant-modal-title {
-  color: white !important;
-  font-size: 16px !important;
-  font-weight: 500 !important;
+  color: var(--text-color) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
 }
 
 #root .ant-modal-close {
-  color: white !important;
+  color: var(--text-color) !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  transition: all 0.3s ease !important;
 }
 
 #root .ant-modal-close:hover {
   color: rgba(255, 255, 255, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 #root .ant-modal-body {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  padding: 0 !important;
+  background-color: var(--bg-color) !important;
+  padding: var(--spacing-lg) !important;
+  overflow-y: auto !important;
+  max-height: 70vh !important;
 }
 
 #root .ant-modal-footer {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--bg-color) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+  padding: var(--spacing-md) var(--spacing-lg) !important;
 }
 
 #root .ant-modal-content::before {
@@ -748,25 +1382,12 @@ button.outline {
   display: none !important;
 }
 
-/* 响应式设计 - 移动端优先 */
-@media (min-width: 768px) {
-  /* 平板和桌面端样式 */
-  .page-container {
-    max-width: 768px;
-  }
-  
-  .page-content {
-    padding: var(--spacing-lg);
-  }
-  
-  .logo h1 {
-    font-size: var(--font-size-xlarge);
-  }
+/* 模态框按钮优化 */
+#root .ant-modal-footer button {
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  font-size: var(--font-size-medium) !important;
+  border-radius: var(--border-radius) !important;
 }
 
-@media (min-width: 1200px) {
-  /* 桌面端样式 */
-  .page-container {
-    max-width: 1200px;
-  }
-}
+
