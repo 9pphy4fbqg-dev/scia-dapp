@@ -11,6 +11,7 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 
 # Testing
 coverage/
@@ -51,4 +52,3 @@ cache/
 
 # Hardhat files
 hardhat.config.js
-.env.example
