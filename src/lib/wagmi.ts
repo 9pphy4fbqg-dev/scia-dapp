@@ -5,8 +5,6 @@ import {
   metaMaskWallet,
   trustWallet,
   rainbowWallet,
-  coinbaseWallet,
-  walletConnectWallet,
   binanceWallet,
   tokenPocketWallet,
   safepalWallet,
@@ -31,10 +29,6 @@ const wallets = [
       okxWallet, // OKX钱包
       imTokenWallet, // imToken钱包
     ] 
-  },
-  {
-    groupName: '其他钱包',
-    wallets: [], // 移除可能导致远程调用的钱包
   },
 ];
 
