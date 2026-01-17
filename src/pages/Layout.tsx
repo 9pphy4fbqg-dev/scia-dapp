@@ -11,7 +11,7 @@ import {
   ScanOutlined 
 } from '@ant-design/icons';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import WalletConnect from '../components/WalletConnect';
 import { message } from 'antd';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -205,8 +205,8 @@ const Layout: React.FC = () => {
         </div>
         
         <div className="top-nav-right">
-          {/* 使用RainbowKit的ConnectButton组件 */}
-          <ConnectButton />
+          {/* 使用自定义的WalletConnect组件 */}
+          <WalletConnect />
         </div>
       </div>
       
