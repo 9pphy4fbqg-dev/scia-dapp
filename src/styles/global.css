@@ -380,10 +380,18 @@ button:active,
   /* 移除其他ant-modal的全屏样式，使用默认大小 */
   #root .ant-modal {
     width: auto !important;
-    max-width: 500px !important;
+    max-width: none !important;
     top: 10% !important;
     margin: 0 auto !important;
     transform: none !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+  }
+  
+  /* 确保模态框背景不会残留 */
+  #root .ant-modal-mask {
+    position: fixed !important;
+    z-index: 999 !important;
   }
   
   #root .ant-modal-content {
