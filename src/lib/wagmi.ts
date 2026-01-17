@@ -14,28 +14,27 @@ import {
   imTokenWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 
-// 创建Wagmi配置
-const projectId = '1a75652e10e3295640037a5b4e4b5bc0'; // 使用默认的WalletConnect项目ID
+// 创建Wagmi配置 - 适配AVE浏览器等本地钱包
+const projectId = ''; // 使用空projectId避免远程调用
 
-// 定义钱包列表，添加常用钱包
+// 定义钱包列表，优先支持本地注入钱包
 const wallets = [
   { 
     groupName: '推荐钱包', 
     wallets: [
-      metaMaskWallet, 
-      trustWallet, 
+      metaMaskWallet, // 优先支持MetaMask兼容的本地钱包（包括AVE浏览器）
+      trustWallet,
       rainbowWallet,
       binanceWallet, // 币安钱包
       tokenPocketWallet, // TP钱包
       safepalWallet, // SafePal钱包
       okxWallet, // OKX钱包
       imTokenWallet, // imToken钱包
-      walletConnectWallet, // 支持其他钱包，包括AVE钱包等
     ] 
   },
   {
     groupName: '其他钱包',
-    wallets: [coinbaseWallet],
+    wallets: [], // 移除可能导致远程调用的钱包
   },
 ];
 
