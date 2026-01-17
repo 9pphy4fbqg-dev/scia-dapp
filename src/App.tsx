@@ -15,7 +15,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 const App: React.FC = () => {
   return (
     <LanguageProvider>
-      <Router basename="/scia-dapp">
+      <Router basename="/">
         <Routes>
           {/* 根路径重定向到 /splash */}
           <Route path="/" element={<Navigate to="/splash" replace />} />
