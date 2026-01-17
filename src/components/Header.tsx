@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import WalletConnect from './WalletConnect';
 
 const Header: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ const Header: React.FC = () => {
           <h1>SCIA Dapp</h1>
         </div>
         <div className="wallet-connect">
-          <ConnectButton />
+          <WalletConnect />
         </div>
       </div>
     </header>

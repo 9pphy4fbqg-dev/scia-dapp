@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount, useChainId, useConnect } from 'wagmi';
 import { useDispatch } from 'react-redux';
 import { updateWalletStatus } from '../features/wallet/walletSlice';
 
@@ -8,6 +7,7 @@ const WalletConnect: React.FC = () => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const dispatch = useDispatch();
+  const { connect, connectors } = useConnect();
 
   // 监听钱包状态变化，同步到Redux store
   useEffect(() => {
@@ -22,11 +22,18 @@ const WalletConnect: React.FC = () => {
 
   return (
     <div className="wallet-connect-container">
-      <ConnectButton
-        showBalance={false}
-        accountStatus="address"
-        chainStatus="icon"
-      />
+      {isConnected ? (
+        <div className="connected-wallet">
+          {address?.slice(0, 6)}...{address?.slice(-4)}
+        </div>
+      ) : (
+        <button 
+          className="connect-button" 
+          onClick={() => connect({ connector: connectors[0] })}
+        >
+          连接钱包
+        </button>
+      )}
     </div>
   );
 };
