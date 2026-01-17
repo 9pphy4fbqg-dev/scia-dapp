@@ -360,7 +360,7 @@ button:active,
     font-size: 24px;
   }
   
-  /* 调整模态框大小 */
+  /* 调整扫描二维码模态框大小 */
   .scan-modal-content {
     width: 100vw;
     height: 100vh;
@@ -377,29 +377,26 @@ button:active,
     max-height: 300px;
   }
   
-  /* 移动端模态框优化 */
+  /* 移除其他ant-modal的全屏样式，使用默认大小 */
   #root .ant-modal {
-    width: 100vw !important;
-    max-width: none !important;
-    top: 0 !important;
-    margin: 0 !important;
+    width: auto !important;
+    max-width: 500px !important;
+    top: 10% !important;
+    margin: 0 auto !important;
     transform: none !important;
   }
   
   #root .ant-modal-content {
-    border-radius: 0 !important;
-    min-height: 100vh !important;
-    max-height: none !important;
+    min-height: auto !important;
+    max-height: 80vh !important;
   }
   
-  /* 移动端模态框内容优化 */
   #root .ant-modal-body {
-    max-height: none !important;
-    min-height: calc(100vh - 80px) !important;
-    padding: var(--spacing-md) !important;
+    min-height: auto !important;
+    max-height: 60vh !important;
   }
   
-  /* 移动端模态框按钮优化 */
+  /* 调整模态框按钮样式 */
   #root .ant-modal-footer {
     display: flex !important;
     flex-direction: column !important;

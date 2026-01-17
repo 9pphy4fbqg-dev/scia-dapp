@@ -247,8 +247,10 @@ ${t('transactionHash')}: ${purchaseHash.substring(0, 10)}...${purchaseHash.subst
       form.resetFields(['packages', 'referrer']);
       // 重置交易相关状态
       setPurchaseHash(undefined);
-      // 刷新页面以获取最新数据
-      window.location.reload();
+      // 1秒后自动刷新页面以获取最新数据
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
     
     if (isPurchaseFailed && purchaseHash) {
